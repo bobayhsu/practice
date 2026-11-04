@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>名字密碼轉換器</title>
+  <style>
+    :root{
+      --night:#070a26;--night-2:#101438;--panel:#111638;--panel-2:#171c45;
+      --paper:#fbfaff;--paper-2:#f2efff;--ink:#11142f;--white:#f8f8ff;
+      --muted:#a9add1;--muted-dark:#676a86;--line:#373d6e;--line-light:#d9d2fb;
+      --violet:#7446ee;--violet-2:#9a72ff;--yellow:#f3d24b;--warn:#ff7892;
+      --shadow:0 22px 70px rgba(0,0,0,.28);--radius:18px;
+      --tableCodeSize:15px;--tableKeySize:16px;--tableTitleSize:22px;
+    }
+    *{box-sizing:border-box}
+    html{color-scheme:dark}
+    body{
+      margin:0;min-height:100vh;padding:22px;color:var(--white);
+      font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.45;
+      background:
+        radial-gradient(circle at 12% 7%,rgba(116,70,238,.18),transparent 28%),
+        radial-gradient(circle at 90% 90%,rgba(70,89,238,.12),transparent 30%),
+        linear-gradient(145deg,#06081f 0%,#0a0d2d 58%,#07091f 100%);
+    }
+    button,input,textarea{font:inherit}
+    button{touch-action:manipulation}
+    .wrap{width:min(1520px,100%);min-height:calc(100vh - 44px);margin:0 auto;display:flex;flex-direction:column;gap:18px}
+    header{min-height:90px;padding-right:64px!important;display:flex;align-items:center;justify-content:space-between;gap:30px;padding:2px 10px}
+    .brand{display:flex;align-items:center;gap:20px;min-width:0}
+    .brandMark{width:78px;flex:0 0 78px;color:var(--violet-2)}
+    .markDots{display:flex;gap:9px;margin:0 0 10px 7px}
+    .markDots i{display:block;width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 18px rgba(154,114,255,.55)}
+    .markLines{display:grid;grid-template-columns:40px 18px;gap:7px;align-items:center}
+    .markLines::before,.markLines::after{content:"";height:5px;background:currentColor;border-radius:6px}
+    .brandCopy{min-width:0}
+    h1{font-size:clamp(30px,3.4vw,52px);line-height:1.05;margin:0;font-weight:900;letter-spacing:.08em;text-wrap:balance}
+    .sub{margin:9px 0 0;color:var(--muted);font-size:clamp(14px,1.35vw,20px);font-weight:700;letter-spacing:.06em}
+    .sub span{color:var(--yellow)}
+    .codeDecor{display:flex;flex-direction:column;gap:12px;align-items:flex-end;color:var(--violet-2);opacity:.8;user-select:none}
+    .glyphLine{font-size:31px;font-weight:800;letter-spacing:.42em;white-space:nowrap}
+    .morseLine{font-family:"Cascadia Mono","SFMono-Regular",Consolas,monospace;font-size:22px;letter-spacing:.22em}
+    .main{display:grid;grid-template-columns:minmax(390px,.78fr) minmax(520px,1.12fr);gap:20px;min-height:0;flex:1}
+    .left{display:flex;flex-direction:column;gap:16px;min-width:0}
+    .card{
+      position:relative;min-height:0;border:1px solid var(--line);border-radius:var(--radius);
+      background:linear-gradient(155deg,rgba(24,29,72,.96),rgba(12,16,48,.98));
+      box-shadow:0 10px 34px rgba(0,0,0,.18);overflow:hidden;
+    }
+    .inputCard{padding:22px}
+    .toolsCard{padding:18px 22px}
+    .manualCard{padding:20px 22px}
+    label,.sectionTitle{display:block;margin:0 0 10px;color:var(--white);font-size:20px;font-weight:900;letter-spacing:.08em}
+    textarea,input{
+      width:100%;border:1px solid #c8c9dc;border-radius:10px;padding:16px 18px;
+      background:#fff;color:var(--ink);outline:none;box-shadow:inset 0 1px 4px rgba(11,12,34,.06);
+      transition:border-color .2s,box-shadow .2s,transform .2s;
+    }
+    textarea{height:86px;resize:none;font-size:24px;line-height:1.4}
+    input{font-size:21px}
+    textarea::placeholder,input::placeholder{color:#8a8c99}
+    textarea:focus,input:focus{border-color:var(--violet-2);box-shadow:0 0 0 4px rgba(154,114,255,.18),inset 0 1px 4px rgba(11,12,34,.06)}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .buttonRow{display:grid;grid-template-columns:1fr 1fr;margin-top:14px}
+    .btn{
+      min-height:48px;border:1px solid var(--violet-2);background:rgba(116,70,238,.1);color:#ddd4ff;
+      border-radius:10px;padding:10px 16px;font-weight:900;cursor:pointer;font-size:16px;letter-spacing:.04em;
+      display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:transform .18s,background .18s,border-color .18s,box-shadow .18s;
+    }
+    .btn:hover{transform:translateY(-2px);background:rgba(116,70,238,.2);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+    .btn:focus-visible,.toolBtn:focus-visible,.fontBtn:focus-visible,.closeBtn:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+    .btn.yellow{color:var(--yellow);border-color:var(--yellow);background:rgba(243,210,75,.04)}
+    .btnIcon{width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border:2px solid currentColor;border-radius:5px;font-size:16px;line-height:1}
+    .toolList{display:grid;gap:9px}
+    .toolBtn{
+      width:100%;min-height:55px;padding:11px 14px;border:1px solid #505787;border-radius:9px;
+      background:linear-gradient(90deg,rgba(116,70,238,.06),rgba(255,255,255,.01));color:var(--white);
+      display:grid;grid-template-columns:42px 1fr 22px;align-items:center;gap:10px;text-align:left;cursor:pointer;
+      font-weight:850;font-size:17px;letter-spacing:.04em;transition:.18s ease;
+    }
+    .toolBtn:hover{border-color:var(--violet-2);background:rgba(116,70,238,.14);transform:translateX(3px)}
+    .toolIcon{color:var(--violet-2);font-family:"Cascadia Mono","Noto Sans TC","Microsoft JhengHei",Consolas,monospace;font-size:18px;font-weight:900;text-align:center;white-space:nowrap;letter-spacing:-.04em}
+    .toolBtn.yellow .toolIcon{color:var(--yellow)}
+    .arrow{color:var(--muted);font-size:24px;text-align:right}
+    .manualMeta{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-top:9px}
+    .small{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
+    #charCount{padding-left:18px;position:relative;white-space:nowrap}
+    #charCount::before{content:"";position:absolute;left:0;top:.42em;width:8px;height:8px;border:2px solid var(--violet-2);border-radius:50%}
+    .warn{color:var(--warn);font-weight:900}
+    .right{display:flex;flex-direction:column;padding:0;background:var(--paper);border:2px solid var(--violet-2);box-shadow:var(--shadow);color:var(--ink)}
+    .resultHead{min-height:92px;padding:20px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px dashed #c6b8f4}
+    .resultHead label{margin:0;color:#4520aa;font-size:25px}
+    .copyBtn{min-width:170px;background:linear-gradient(135deg,#6740dc,#4f25d5);color:#fff;border:1px solid #9b81ef;box-shadow:0 7px 18px rgba(83,45,209,.28)}
+    .copyBtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}
+    .result{
+      flex:1;min-height:0;padding:28px 36px 34px;overflow:auto;color:var(--ink);
+      background:
+        linear-gradient(rgba(116,70,238,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(116,70,238,.025) 1px,transparent 1px),#fff;
+      background-size:32px 32px;
+    }
+    .resultEmpty{height:100%;min-height:220px;display:grid;place-items:center;color:var(--muted-dark);font-size:18px}
+    .resultName{margin:0 0 30px;font-size:clamp(27px,2.4vw,38px);line-height:1.2;font-weight:900;letter-spacing:.08em}
+    .resultSection{margin-top:23px}
+    .resultLabel{margin:0 0 8px;color:#4b24b9;font-size:18px;font-weight:900;letter-spacing:.08em}
+    .codeLine{margin:0;font-family:"Cascadia Mono","SFMono-Regular",Consolas,monospace;font-size:clamp(21px,2.1vw,32px);line-height:1.55;font-weight:750;letter-spacing:.11em;overflow-wrap:anywhere}
+    .codeLine.compact{letter-spacing:.16em}
+    .detailList{border:1px dashed #bdaaf3;border-radius:11px;background:rgba(250,248,255,.86);overflow:hidden}
+    .detailRow{display:grid;grid-template-columns:minmax(32px,.45fr) minmax(120px,1.45fr) minmax(110px,1fr);align-items:center;gap:14px;padding:12px 16px;border-bottom:1px dashed #cfc2f3;font-family:"Cascadia Mono","Noto Sans TC","Microsoft JhengHei",monospace;font-size:clamp(16px,1.5vw,22px)}
+    .detailRow:last-child{border-bottom:0}
+    .detailChar{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;font-weight:900;font-size:1.18em}
+    .detailCode{font-weight:800;letter-spacing:.1em}
+    #note{min-height:27px;margin:0;padding:4px 26px 11px;color:#5f557b;background:var(--paper);font-weight:700}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line-light);font-size:13px;color:var(--ink)}
+    th,td{border:1px solid var(--line-light);padding:5px;text-align:center}
+    th{background:var(--paper-2)}
+    #zhuyinTable{max-height:160px;overflow:auto;margin-top:8px}
+    .overlay{position:fixed;inset:0;display:none;pointer-events:none;z-index:10;background:rgba(2,3,18,.58);backdrop-filter:blur(5px)}
+    .overlay.show{display:block}
+    .modal{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1120px,calc(100vw - 36px));height:min(760px,calc(100vh - 56px));
+      min-width:360px;min-height:280px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);padding:0;
+      display:flex;flex-direction:column;overflow:visible;pointer-events:auto;background:var(--paper);border:2px solid var(--violet-2);border-radius:16px;
+      box-shadow:0 30px 100px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08);
+    }
+    .modal.dual{width:min(680px,calc(50vw - 28px));height:min(780px,calc(100vh - 44px));transform:none}
+    .modal.leftTable{left:18px;top:50%;transform:translateY(-50%)}
+    .modal.rightTable{left:auto;right:18px;top:50%;transform:translateY(-50%)}
+    .modal.fullscreenTable{left:10px!important;right:auto!important;top:10px!important;transform:none!important;width:calc(100vw - 20px)!important;height:calc(100vh - 20px)!important;max-width:none;max-height:none}
+    #morseModal,#zhuyinModal{display:none}
+    .modalHead{height:58px;flex:0 0 58px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px 8px 20px;cursor:move;user-select:none;background:var(--night-2);border-radius:13px 13px 0 0;color:#fff}
+    .modalHead h2{display:block;margin:0;font-size:17px;letter-spacing:.05em}
+    .modalTools{display:flex;align-items:center;gap:7px;margin-left:auto}
+    .fontBtn,.closeBtn{height:36px;border:1px solid #6656a6;background:#252a58;color:#fff;border-radius:8px;padding:4px 10px;font-size:14px;font-weight:900;cursor:pointer;transition:.18s}
+    .fontBtn:hover{background:var(--violet)}
+    .closeBtn{background:var(--yellow);color:#25203b;border-color:#ffe572}
+    .closeBtn:hover{background:#ffe36b}
+    .fullscreenIcon{position:relative;display:block;width:15px;height:15px;border:2px solid currentColor;border-radius:2px}
+    .fullscreenIcon::before{content:"";position:absolute;inset:2px;border:1px solid currentColor;border-radius:1px}
+    .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .resizeHandle{position:absolute;z-index:4;background:transparent}
+    .resizeHandle::after{content:"";position:absolute;inset:0;border-radius:999px}
+    .resizeHandle:hover::after{background:rgba(154,114,255,.25)}
+    .resizeHandle.n,.resizeHandle.s{left:18px;right:18px;height:12px}.resizeHandle.e,.resizeHandle.w{top:18px;bottom:18px;width:12px}
+    .resizeHandle.n{top:-8px;cursor:ns-resize}.resizeHandle.s{bottom:-8px;cursor:ns-resize}.resizeHandle.e{right:-8px;cursor:ew-resize}.resizeHandle.w{left:-8px;cursor:ew-resize}
+    .resizeHandle.ne,.resizeHandle.nw,.resizeHandle.se,.resizeHandle.sw{width:24px;height:24px}.resizeHandle.ne{right:-10px;top:-10px;cursor:nesw-resize}.resizeHandle.nw{left:-10px;top:-10px;cursor:nwse-resize}.resizeHandle.se{right:-10px;bottom:-10px;cursor:nwse-resize}.resizeHandle.sw{left:-10px;bottom:-10px;cursor:nesw-resize}
+    #morseModalContent,#zhuyinModalContent{padding:18px;overflow:auto;flex:1;background:linear-gradient(180deg,#fff,#f5f2ff);border-radius:0 0 14px 14px;color:var(--ink)}
+    .tableBlock{margin-bottom:12px}.tableGrid{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+    .codeItem{background:#fff;border:1px solid #c6b9ef;border-radius:8px;padding:.42em .62em;display:inline-flex;align-items:center;justify-content:flex-start;gap:.42em;width:auto;min-width:0;font-family:"Cascadia Mono",Consolas,monospace;font-size:var(--tableCodeSize);box-shadow:0 3px 9px rgba(42,29,92,.08)}
+    .codeItem b{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;font-size:var(--tableKeySize);color:#5e32cd}.codeItem span{font-weight:900;color:var(--ink)}
+    .codeItem:nth-child(3n+2){background:#fffbe9}.codeItem:nth-child(3n){background:#f3eeff}
+    @media(max-width:1040px){body{padding:16px}.wrap{min-height:calc(100vh - 32px)}.main{grid-template-columns:minmax(330px,.8fr) minmax(440px,1.2fr)}.result{padding:24px}.manualMeta{display:block}.manualMeta #charCount{margin-top:5px}.glyphLine{font-size:24px}}
+    @media(max-width:820px){
+      body{padding:12px}.wrap{min-height:auto}.codeDecor{display:none}header{min-height:82px;padding:2px 4px}.brand{gap:12px}.brandMark{width:48px;flex-basis:48px}.markDots{gap:5px;margin:0 0 7px 4px}.markDots i{width:7px;height:7px}.markLines{grid-template-columns:27px 12px;gap:5px}.markLines::before,.markLines::after{height:4px}
+      h1{font-size:30px}.sub{font-size:13px}.main{grid-template-columns:1fr}.right{min-height:580px;order:2}.left{order:1}.resultHead{min-height:74px;padding:14px 16px}.resultHead label{font-size:21px}.copyBtn{min-width:132px;min-height:44px}.result{padding:22px 18px}.detailRow{grid-template-columns:42px 1fr;gap:7px 12px}.detailCode{grid-column:2}.modal,.modal.dual{left:12px;right:auto;top:74px;transform:none;width:calc(100vw - 24px);height:calc(100vh - 88px);min-width:0}.modal.rightTable{top:86px;height:calc(100vh - 100px)}
+    }
+    @media(max-width:480px){.buttonRow{grid-template-columns:1fr}.inputCard,.toolsCard,.manualCard{padding:18px}.resultHead{align-items:flex-start}.copyBtn{min-width:auto;padding:9px 12px}.resultName{margin-bottom:22px}.codeLine{font-size:19px}.detailRow{font-size:16px}.manualMeta #charCount{white-space:normal}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+  </style>
+</head>
+<body>
+<a href="index.html" id="toGames" title="回遊戲目錄" aria-label="回遊戲目錄" style="position:fixed;top:14px;right:16px;z-index:20;width:44px;height:44px;border-radius:12px;background:#fff;color:#11142f;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(0,0,0,.3)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg></a>
+<script>document.getElementById('toGames').addEventListener('click',function(e){e.preventDefault();location.replace(this.href);});</script>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="brandMark" aria-hidden="true"><span class="markDots"><i></i><i></i><i></i></span><span class="markLines"></span></div>
+      <div class="brandCopy">
+        <h1>名字密碼轉換器</h1>
+        <p class="sub">英文 → 摩斯密碼｜<span>中文 → 注音數字密碼</span></p>
+      </div>
+    </div>
+    <div class="codeDecor" aria-hidden="true"><div class="glyphLine">ㄅ ㄆ ㄇ ㄈ ㄉ</div><div class="morseLine">··· — ·· ——— ·</div></div>
+  </header>
+
+  <main class="main">
+    <section class="left" aria-label="轉換工具">
+      <div class="card inputCard">
+        <label for="nameInput">輸入名字</label>
+        <textarea id="nameInput" placeholder="例如：Bobay 或 許榮哲" oninput="convertName()"></textarea>
+        <div class="row buttonRow">
+          <button class="btn" onclick="fillSample(&#39;Bobay&#39;)"><span class="btnIcon" aria-hidden="true">A</span>英文範例</button>
+          <button class="btn yellow" onclick="fillSample(&#39;許榮哲&#39;)"><span class="btnIcon" aria-hidden="true">中</span>中文範例</button>
+        </div>
+      </div>
+      <div class="card toolsCard">
+        <h2 class="sectionTitle">參考表與工具</h2>
+        <div class="toolList">
+          <button class="toolBtn" onclick="openTable(&#39;morse&#39;)"><span class="toolIcon" aria-hidden="true">···—</span><span>英文摩斯對照表</span><span class="arrow" aria-hidden="true">›</span></button>
+          <button class="toolBtn yellow" onclick="openTable(&#39;zhuyin&#39;)"><span class="toolIcon" aria-hidden="true">ㄅ</span><span>中文注音數字表</span><span class="arrow" aria-hidden="true">›</span></button>
+        </div>
+      </div>
+      <div class="card manualCard">
+        <label for="manualZhuyin">手動注音轉數字</label>
+        <input id="manualZhuyin" placeholder="ㄒㄩˇ ㄖㄨㄥˊ ㄓㄜˊ" oninput="convertManualZhuyin()">
+        <div class="manualMeta">
+          <p class="small">遇到未收錄中文字時，可直接輸入注音。</p>
+          <p class="small" id="charCount">目前已收錄常用中文字。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card right">
+      <div class="resultHead">
+        <label>完成結果</label>
+        <button class="btn copyBtn" onclick="copyResult()"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3" width="11" height="15" rx="2"></rect><path d="M16 18v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"></path></svg>複製結果</button>
+      </div>
+      <div class="result" id="result">
+    <h2 class="resultName">許榮哲</h2>
+    <section class="resultSection"><h3 class="resultLabel">數字密碼：</h3><p class="codeLine">14 24 3 / 18 23 36 2 / 15 27 2</p></section>
+    <section class="resultSection"><h3 class="resultLabel">連在一起：</h3><p class="codeLine compact">14243182336215272</p></section>
+    <section class="resultSection"><h3 class="resultLabel">逐字拆解：</h3><div class="detailList"><div class="detailRow"><span class="detailChar">許</span><span>ㄒㄩˇ</span><span class="detailCode">14 24 3</span></div><div class="detailRow"><span class="detailChar">榮</span><span>ㄖㄨㄥˊ</span><span class="detailCode">18 23 36 2</span></div><div class="detailRow"><span class="detailChar">哲</span><span>ㄓㄜˊ</span><span class="detailCode">15 27 2</span></div></div></section></div>
+      <p class="small" id="note" aria-live="polite"></p>
+    </section>
+  </main>
+</div>
+
+
+<div class="overlay" id="tableOverlay">
+  <div class="modal dual leftTable" id="morseModal">
+    <div class="modalHead" data-drag-handle="morseModal">
+      <h2>英文摩斯密碼對照表</h2>
+      <div class="modalTools">
+        <button class="fontBtn" onclick="changeTableFont(1)" title="放大字體">A+</button>
+        <button class="fontBtn" onclick="changeTableFont(-1)" title="縮小字體">A-</button>
+        <button class="fontBtn" onclick="toggleFullscreenTable(&#39;morseModal&#39;)" title="全螢幕"><span class="fullscreenIcon" aria-hidden="true"></span><span class="srOnly">全螢幕</span></button>
+      </div>
+      <button class="closeBtn" onclick="closeTable(&#39;morse&#39;)">關閉</button>
+    </div>
+    <div id="morseModalContent"></div>
+    <div class="resizeHandle n" data-resize="n"></div>
+    <div class="resizeHandle e" data-resize="e"></div>
+    <div class="resizeHandle s" data-resize="s"></div>
+    <div class="resizeHandle w" data-resize="w"></div>
+    <div class="resizeHandle ne" data-resize="ne"></div>
+    <div class="resizeHandle nw" data-resize="nw"></div>
+    <div class="resizeHandle se" data-resize="se"></div>
+    <div class="resizeHandle sw" data-resize="sw"></div>
+  </div>
+  <div class="modal dual rightTable" id="zhuyinModal">
+    <div class="modalHead" data-drag-handle="zhuyinModal">
+      <h2>中文注音數字密碼對照表</h2>
+      <div class="modalTools">
+        <button class="fontBtn" onclick="changeTableFont(1)" title="放大字體">A+</button>
+        <button class="fontBtn" onclick="changeTableFont(-1)" title="縮小字體">A-</button>
+        <button class="fontBtn" onclick="toggleFullscreenTable(&#39;zhuyinModal&#39;)" title="全螢幕"><span class="fullscreenIcon" aria-hidden="true"></span><span class="srOnly">全螢幕</span></button>
+      </div>
+      <button class="closeBtn" onclick="closeTable(&#39;zhuyin&#39;)">關閉</button>
+    </div>
+    <div id="zhuyinModalContent"></div>
+    <div class="resizeHandle n" data-resize="n"></div>
+    <div class="resizeHandle e" data-resize="e"></div>
+    <div class="resizeHandle s" data-resize="s"></div>
+    <div class="resizeHandle w" data-resize="w"></div>
+    <div class="resizeHandle ne" data-resize="ne"></div>
+    <div class="resizeHandle nw" data-resize="nw"></div>
+    <div class="resizeHandle se" data-resize="se"></div>
+    <div class="resizeHandle sw" data-resize="sw"></div>
+  </div>
+</div>
+
+<script>
+const morse = {
+  A:".-", B:"-...", C:"-.-.", D:"-..", E:".", F:"..-.", G:"--.", H:"....", I:"..", J:".---", K:"-.-", L:".-..", M:"--", N:"-.", O:"---", P:".--.", Q:"--.-", R:".-.", S:"...", T:"-", U:"..-", V:"...-", W:".--", X:"-..-", Y:"-.--", Z:"--..",
+  0:"-----", 1:".----", 2:"..---", 3:"...--", 4:"....-", 5:".....", 6:"-....", 7:"--...", 8:"---..", 9:"----.", " ":"/", "-":"-....-", ".":".-.-.-"
+};
+
+const zhuyinOrder = ["ㄅ","ㄆ","ㄇ","ㄈ","ㄉ","ㄊ","ㄋ","ㄌ","ㄍ","ㄎ","ㄏ","ㄐ","ㄑ","ㄒ","ㄓ","ㄔ","ㄕ","ㄖ","ㄗ","ㄘ","ㄙ","ㄧ","ㄨ","ㄩ","ㄚ","ㄛ","ㄜ","ㄝ","ㄞ","ㄟ","ㄠ","ㄡ","ㄢ","ㄣ","ㄤ","ㄥ","ㄦ"];
+const zNum = Object.fromEntries(zhuyinOrder.map((z,i)=>[z,i+1]));
+const toneMap = {"ˉ":"1","ˊ":"2","ˇ":"3","ˋ":"4","˙":"0"};
+
+// 常用姓名字庫：格式為「注音符號＋聲調」。可自行在此擴充。
+const charZhuyin = {
+  "許":"ㄒㄩˇ","榮":"ㄖㄨㄥˊ","哲":"ㄓㄜˊ",
+  "王":"ㄨㄤˊ","李":"ㄌㄧˇ","張":"ㄓㄤ","陳":"ㄔㄣˊ","林":"ㄌㄧㄣˊ","黃":"ㄏㄨㄤˊ","吳":"ㄨˊ","劉":"ㄌㄧㄡˊ","蔡":"ㄘㄞˋ","楊":"ㄧㄤˊ","郭":"ㄍㄨㄛ","謝":"ㄒㄧㄝˋ","曾":"ㄗㄥ","鄭":"ㄓㄥˋ","洪":"ㄏㄨㄥˊ","邱":"ㄑㄧㄡ","廖":"ㄌㄧㄠˋ","徐":"ㄒㄩˊ","周":"ㄓㄡ","葉":"ㄧㄝˋ","蘇":"ㄙㄨ","莊":"ㄓㄨㄤ","呂":"ㄌㄩˇ","高":"ㄍㄠ","何":"ㄏㄜˊ","朱":"ㄓㄨ","羅":"ㄌㄨㄛˊ","胡":"ㄏㄨˊ","蕭":"ㄒㄧㄠ","江":"ㄐㄧㄤ","沈":"ㄕㄣˇ","傅":"ㄈㄨˋ","潘":"ㄆㄢ","彭":"ㄆㄥˊ","游":"ㄧㄡˊ","魏":"ㄨㄟˋ","方":"ㄈㄤ","石":"ㄕˊ","余":"ㄩˊ","盧":"ㄌㄨˊ","梁":"ㄌㄧㄤˊ","趙":"ㄓㄠˋ","柯":"ㄎㄜ","簡":"ㄐㄧㄢˇ",
+  "子":"ㄗˇ","文":"ㄨㄣˊ","明":"ㄇㄧㄥˊ","華":"ㄏㄨㄚˊ","美":"ㄇㄟˇ","雅":"ㄧㄚˇ","婷":"ㄊㄧㄥˊ","怡":"ㄧˊ","君":"ㄐㄩㄣ","俊":"ㄐㄩㄣˋ","傑":"ㄐㄧㄝˊ","志":"ㄓˋ","偉":"ㄨㄟˇ","家":"ㄐㄧㄚ","佳":"ㄐㄧㄚ","欣":"ㄒㄧㄣ","心":"ㄒㄧㄣ","慧":"ㄏㄨㄟˋ","惠":"ㄏㄨㄟˋ","淑":"ㄕㄨˊ","芬":"ㄈㄣ","芳":"ㄈㄤ","玲":"ㄌㄧㄥˊ","琳":"ㄌㄧㄣˊ","萱":"ㄒㄩㄢ","軒":"ㄒㄩㄢ","宇":"ㄩˇ","宸":"ㄔㄣˊ","恩":"ㄣ","承":"ㄔㄥˊ","佑":"ㄧㄡˋ","宏":"ㄏㄨㄥˊ","豪":"ㄏㄠˊ","翔":"ㄒㄧㄤˊ","凱":"ㄎㄞˇ","庭":"ㄊㄧㄥˊ","安":"ㄢ","妤":"ㄩˊ","涵":"ㄏㄢˊ","晴":"ㄑㄧㄥˊ","蓉":"ㄖㄨㄥˊ","珊":"ㄕㄢ","琪":"ㄑㄧˊ","瑜":"ㄩˊ","瑋":"ㄨㄟˇ","瑄":"ㄒㄩㄢ","昕":"ㄒㄧㄣ","昇":"ㄕㄥ","昱":"ㄩˋ","辰":"ㄔㄣˊ","柏":"ㄅㄛˊ","翰":"ㄏㄢˋ","毅":"ㄧˋ","仁":"ㄖㄣˊ","義":"ㄧˋ","禮":"ㄌㄧˇ","智":"ㄓˋ","信":"ㄒㄧㄣˋ","德":"ㄉㄜˊ","倫":"ㄌㄨㄣˊ","書":"ㄕㄨ","詩":"ㄕ","芸":"ㄩㄣˊ","璇":"ㄒㄩㄢˊ","宗":"ㄗㄨㄥ","翊":"ㄧˋ","睿":"ㄖㄨㄟˋ","嘉":"ㄐㄧㄚ","銘":"ㄇㄧㄥˊ","佩":"ㄆㄟˋ","綺":"ㄑㄧˇ","潔":"ㄐㄧㄝˊ","龍":"ㄌㄨㄥˊ","虎":"ㄏㄨˇ","鳳":"ㄈㄥˋ","杰":"ㄐㄧㄝˊ"
+};
+
+Object.assign(charZhuyin, {
+  "杜":"ㄉㄨˋ","戴":"ㄉㄞˋ","范":"ㄈㄢˋ","夏":"ㄒㄧㄚˋ","鍾":"ㄓㄨㄥ","宋":"ㄙㄨㄥˋ","曹":"ㄘㄠˊ","鄧":"ㄉㄥˋ","溫":"ㄨㄣ","蔣":"ㄐㄧㄤˇ","唐":"ㄊㄤˊ","馬":"ㄇㄚˇ","馮":"ㄈㄥˊ","侯":"ㄏㄡˊ","邵":"ㄕㄠˋ","程":"ㄔㄥˊ","袁":"ㄩㄢˊ","姚":"ㄧㄠˊ","康":"ㄎㄤ","姜":"ㄐㄧㄤ","錢":"ㄑㄧㄢˊ","湯":"ㄊㄤ","白":"ㄅㄞˊ","田":"ㄊㄧㄢˊ","孔":"ㄎㄨㄥˇ","毛":"ㄇㄠˊ","萬":"ㄨㄢˋ","歐":"ㄡ","官":"ㄍㄨㄢ","嚴":"ㄧㄢˊ",
+  "天":"ㄊㄧㄢ","元":"ㄩㄢˊ","洋":"ㄧㄤˊ","陽":"ㄧㄤˊ","揚":"ㄧㄤˊ","耀":"ㄧㄠˋ","曜":"ㄧㄠˋ","祐":"ㄧㄡˋ","右":"ㄧㄡˋ","友":"ㄧㄡˇ","有":"ㄧㄡˇ","勇":"ㄩㄥˇ","永":"ㄩㄥˇ","詠":"ㄩㄥˇ","雍":"ㄩㄥ","育":"ㄩˋ","郁":"ㄩˋ","鈺":"ㄩˋ","玉":"ㄩˋ","鈞":"ㄐㄩㄣ","均":"ㄐㄩㄣ","軍":"ㄐㄩㄣ","峻":"ㄐㄩㄣˋ","駿":"ㄐㄩㄣˋ","群":"ㄑㄩㄣˊ","謙":"ㄑㄧㄢ","謹":"ㄐㄧㄣˇ","瑾":"ㄐㄧㄣˇ","錦":"ㄐㄧㄣˇ","瑩":"ㄧㄥˊ","穎":"ㄧㄥˇ","盈":"ㄧㄥˊ","瑛":"ㄧㄥ","英":"ㄧㄥ","櫻":"ㄧㄥ","加":"ㄐㄧㄚ","迦":"ㄐㄧㄚ","婕":"ㄐㄧㄝˊ","捷":"ㄐㄧㄝˊ","介":"ㄐㄧㄝˋ",
+  "宣":"ㄒㄩㄢ","玄":"ㄒㄩㄢˊ","學":"ㄒㄩㄝˊ","雪":"ㄒㄩㄝˇ","薇":"ㄨㄟˊ","維":"ㄨㄟˊ","唯":"ㄨㄟˊ","惟":"ㄨㄟˊ","威":"ㄨㄟ","微":"ㄨㄟˊ","緯":"ㄨㄟˇ","蔚":"ㄨㄟˋ","璽":"ㄒㄧˇ","希":"ㄒㄧ","熙":"ㄒㄧ","曦":"ㄒㄧ","汐":"ㄒㄧ","喜":"ㄒㄧˇ","惜":"ㄒㄧˊ","宥":"ㄧㄡˋ","奕":"ㄧˋ","羿":"ㄧˋ","逸":"ㄧˋ","益":"ㄧˋ","宜":"ㄧˊ","儀":"ㄧˊ","伊":"ㄧ","依":"ㄧ","語":"ㄩˇ","雨":"ㄩˇ","羽":"ㄩˇ","予":"ㄩˇ","于":"ㄩˊ","禹":"ㄩˇ","榆":"ㄩˊ","愉":"ㄩˊ","柔":"ㄖㄡˊ","若":"ㄖㄨㄛˋ","瑞":"ㄖㄨㄟˋ","芮":"ㄖㄨㄟˋ",
+  "品":"ㄆㄧㄣˇ","平":"ㄆㄧㄥˊ","萍":"ㄆㄧㄥˊ","蘋":"ㄆㄧㄥˊ","彥":"ㄧㄢˋ","妍":"ㄧㄢˊ","言":"ㄧㄢˊ","晏":"ㄧㄢˋ","彤":"ㄊㄨㄥˊ","桐":"ㄊㄨㄥˊ","童":"ㄊㄨㄥˊ","同":"ㄊㄨㄥˊ","彬":"ㄅㄧㄣ","斌":"ㄅㄧㄣ","兵":"ㄅㄧㄥ","冰":"ㄅㄧㄥ","青":"ㄑㄧㄥ","清":"ㄑㄧㄥ","卿":"ㄑㄧㄥ","慶":"ㄑㄧㄥˋ","立":"ㄌㄧˋ","莉":"ㄌㄧˋ","俐":"ㄌㄧˋ","麗":"ㄌㄧˋ","力":"ㄌㄧˋ","利":"ㄌㄧˋ","良":"ㄌㄧㄤˊ","亮":"ㄌㄧㄤˋ","諒":"ㄌㄧㄤˋ","喬":"ㄑㄧㄠˊ","橋":"ㄑㄧㄠˊ","巧":"ㄑㄧㄠˇ","可":"ㄎㄜˇ","苛":"ㄎㄜ","科":"ㄎㄜ","克":"ㄎㄜˋ","寧":"ㄋㄧㄥˊ","甯":"ㄋㄧㄥˊ","妮":"ㄋㄧ","倪":"ㄋㄧˊ","娜":"ㄋㄚˋ","如":"ㄖㄨˊ","茹":"ㄖㄨˊ","儒":"ㄖㄨˊ",
+  "正":"ㄓㄥˋ","政":"ㄓㄥˋ","峥":"ㄓㄥ","真":"ㄓㄣ","珍":"ㄓㄣ","臻":"ㄓㄣ","貞":"ㄓㄣ","振":"ㄓㄣˋ","震":"ㄓㄣˋ","章":"ㄓㄤ","彰":"ㄓㄤ","展":"ㄓㄢˇ","湛":"ㄓㄢˋ","中":"ㄓㄨㄥ","忠":"ㄓㄨㄥ","仲":"ㄓㄨㄥˋ","卓":"ㄓㄨㄛˊ","筑":"ㄓㄨˊ","竹":"ㄓㄨˊ","思":"ㄙ","絲":"ㄙ","斯":"ㄙ","司":"ㄙ","慈":"ㄘˊ","紫":"ㄗˇ","梓":"ㄗˇ","姿":"ㄗ","佐":"ㄗㄨㄛˇ","祖":"ㄗㄨˇ","馨":"ㄒㄧㄣ","新":"ㄒㄧㄣ","辛":"ㄒㄧㄣ","鑫":"ㄒㄧㄣ","幸":"ㄒㄧㄥˋ","杏":"ㄒㄧㄥˋ","行":"ㄒㄧㄥˊ","建":"ㄐㄧㄢˋ","健":"ㄐㄧㄢˋ","劍":"ㄐㄧㄢˋ","見":"ㄐㄧㄢˋ","敬":"ㄐㄧㄥˋ","靜":"ㄐㄧㄥˋ","靖":"ㄐㄧㄥˋ","晶":"ㄐㄧㄥ","菁":"ㄐㄧㄥ","景":"ㄐㄧㄥˇ"
+});
+
+Object.assign(charZhuyin, {
+  "丁":"ㄉㄧㄥ","任":"ㄖㄣˋ","伍":"ㄨˇ","韋":"ㄨㄟˊ","藍":"ㄌㄢˊ","施":"ㄕ","連":"ㄌㄧㄢˊ","賀":"ㄏㄜˋ","龔":"ㄍㄨㄥ","顏":"ㄧㄢˊ","黎":"ㄌㄧˊ","阮":"ㄖㄨㄢˇ","尤":"ㄧㄡˊ","秦":"ㄑㄧㄣˊ","殷":"ㄧㄣ","包":"ㄅㄠ","史":"ㄕˇ","向":"ㄒㄧㄤˋ","甘":"ㄍㄢ","尹":"ㄧㄣˇ",
+  "亞":"ㄧㄚˋ","呈":"ㄔㄥˊ","成":"ㄔㄥˊ","誠":"ㄔㄥˊ","城":"ㄔㄥˊ","丞":"ㄔㄥˊ","廷":"ㄊㄧㄥˊ","亭":"ㄊㄧㄥˊ","弘":"ㄏㄨㄥˊ","泓":"ㄏㄨㄥˊ","鴻":"ㄏㄨㄥˊ","虹":"ㄏㄨㄥˊ","浩":"ㄏㄠˋ","皓":"ㄏㄠˋ","昊":"ㄏㄠˋ","晧":"ㄏㄠˋ",
+  "博":"ㄅㄛˊ","伯":"ㄅㄛˊ","佰":"ㄅㄞˇ","瀚":"ㄏㄢˋ","漢":"ㄏㄢˋ","函":"ㄏㄢˊ","晗":"ㄏㄢˊ","航":"ㄏㄤˊ","杭":"ㄏㄤˊ","昂":"ㄤˊ","岸":"ㄢˋ","桉":"ㄢ","晨":"ㄔㄣˊ","臣":"ㄔㄣˊ","忱":"ㄔㄣˊ","燦":"ㄘㄢˋ","璨":"ㄘㄢˋ",
+  "人":"ㄖㄣˊ","芊":"ㄑㄧㄢ","千":"ㄑㄧㄢ","仟":"ㄑㄧㄢ","倩":"ㄑㄧㄢˋ","茜":"ㄑㄧㄢˋ","前":"ㄑㄧㄢˊ","乾":"ㄑㄧㄢˊ","芯":"ㄒㄧㄣ","忻":"ㄒㄧㄣ","歆":"ㄒㄧㄣ","星":"ㄒㄧㄥ","云":"ㄩㄣˊ","筠":"ㄩㄣˊ","昀":"ㄩㄣˊ","允":"ㄩㄣˇ","韻":"ㄩㄣˋ",
+  "渝":"ㄩˊ","喻":"ㄩˋ","煜":"ㄩˋ","毓":"ㄩˋ","岳":"ㄩㄝˋ","玥":"ㄩㄝˋ","悅":"ㄩㄝˋ","越":"ㄩㄝˋ","月":"ㄩㄝˋ","樂":"ㄩㄝˋ",
+  "誼":"ㄧˋ","憶":"ㄧˋ","藝":"ㄧˋ","亦":"ㄧˋ","意":"ㄧˋ","易":"ㄧˋ","億":"ㄧˋ","弈":"ㄧˋ","弋":"ㄧˋ","一":"ㄧ","壹":"ㄧ","以":"ㄧˇ","乙":"ㄧˇ","堯":"ㄧㄠˊ","瑤":"ㄧㄠˊ","遙":"ㄧㄠˊ","謠":"ㄧㄠˊ",
+  "訪":"ㄈㄤˇ","放":"ㄈㄤˋ","菲":"ㄈㄟ","妃":"ㄈㄟ","霏":"ㄈㄟ","飛":"ㄈㄟ","非":"ㄈㄟ","斐":"ㄈㄟˇ","沛":"ㄆㄟˋ","培":"ㄆㄟˊ","蓓":"ㄅㄟˋ","貝":"ㄅㄟˋ","倍":"ㄅㄟˋ","汝":"ㄖㄨˇ","乳":"ㄖㄨˇ","潤":"ㄖㄨㄣˋ","閏":"ㄖㄨㄣˋ",
+  "淇":"ㄑㄧˊ","祺":"ㄑㄧˊ","琦":"ㄑㄧˊ","麒":"ㄑㄧˊ","其":"ㄑㄧˊ","奇":"ㄑㄧˊ","祈":"ㄑㄧˊ","啟":"ㄑㄧˇ","綾":"ㄌㄧㄥˊ","伶":"ㄌㄧㄥˊ","苓":"ㄌㄧㄥˊ","鈴":"ㄌㄧㄥˊ","靈":"ㄌㄧㄥˊ","羚":"ㄌㄧㄥˊ","齡":"ㄌㄧㄥˊ",
+  "尚":"ㄕㄤˋ","上":"ㄕㄤˋ","善":"ㄕㄢˋ","姍":"ㄕㄢ","山":"ㄕㄢ","杉":"ㄕㄢ","苡":"ㄧˇ","芷":"ㄓˇ","芝":"ㄓ","芙":"ㄈㄨˊ","芃":"ㄆㄥˊ","葳":"ㄨㄟ","葵":"ㄎㄨㄟˊ","葶":"ㄊㄧㄥˊ","莞":"ㄨㄢˇ","菀":"ㄨㄢˇ","薰":"ㄒㄩㄣ","勳":"ㄒㄩㄣ","勛":"ㄒㄩㄣ","勵":"ㄌㄧˋ"
+});
+
+function isChineseChar(ch){ return /[\u4e00-\u9fff]/.test(ch); }
+function isEnglishLike(s){ return /^[A-Za-z0-9 .\-]+$/.test(s.trim()); }
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+}
+
+function zhuyinToNumbers(zy){
+  const arr = [];
+  for (const ch of zy){
+    if (zNum[ch]) arr.push(String(zNum[ch]));
+    else if (toneMap[ch]) arr.push(toneMap[ch]);
+  }
+  // 一聲不標符號：自動補上「1」，讓每個字最後都是聲調數字（與對照表一致）
+  if (arr.length && !/[ˉˊˇˋ˙]/.test(zy)) arr.push('1');
+  return arr;
+}
+
+function convertName(){
+  const input = document.getElementById('nameInput').value.trim();
+  const result = document.getElementById('result');
+  const note = document.getElementById('note');
+  note.innerHTML = '';
+  if (!input){ result.innerHTML = '<div class="resultEmpty">請先輸入名字。</div>'; return; }
+
+  if (isEnglishLike(input) && /[A-Za-z]/.test(input)){
+    const chars = [...input.toUpperCase()];
+    const converted = chars.map(ch => morse[ch] ?? '?').join(' ');
+    const detail = chars.filter(ch => ch !== ' ').map(ch => `
+      <div class="detailRow"><span class="detailChar">${escapeHtml(ch)}</span><span>摩斯密碼</span><span class="detailCode">${escapeHtml(morse[ch] ?? '未支援')}</span></div>`).join('');
+    result.innerHTML = `
+      <h2 class="resultName">${escapeHtml(input)}</h2>
+      <section class="resultSection"><h3 class="resultLabel">摩斯密碼：</h3><p class="codeLine">${escapeHtml(converted)}</p></section>
+      <section class="resultSection"><h3 class="resultLabel">逐字拆解：</h3><div class="detailList">${detail}</div></section>`;
+    return;
+  }
+
+  const groups = [];
+  const details = [];
+  const missing = [];
+  const ignored = [];
+  for (const ch of input){
+    if (/\s/.test(ch)) continue;
+    if (!isChineseChar(ch)) { ignored.push(ch); continue; }
+    const zy = charZhuyin[ch];
+    if (!zy){ missing.push(ch); groups.push('?'); details.push(`${ch} = 尚未收錄`); continue; }
+    const nums = zhuyinToNumbers(zy);
+    groups.push(nums.join(' '));
+    details.push(`${ch} = ${zy} = ${nums.join(' ')}`);
+  }
+  const detailRows = details.map(detail => {
+    const parts = detail.split(' = ');
+    return `<div class="detailRow"><span class="detailChar">${escapeHtml(parts[0] || '')}</span><span>${escapeHtml(parts[1] || '')}</span><span class="detailCode">${escapeHtml(parts.slice(2).join(' = ') || '')}</span></div>`;
+  }).join('');
+  result.innerHTML = `
+    <h2 class="resultName">${escapeHtml(input)}</h2>
+    <section class="resultSection"><h3 class="resultLabel">數字密碼：</h3><p class="codeLine">${escapeHtml(groups.join(' / '))}</p></section>
+    <section class="resultSection"><h3 class="resultLabel">連在一起：</h3><p class="codeLine compact">${escapeHtml(groups.map(g=>g.replaceAll(' ','')).join(''))}</p></section>
+    <section class="resultSection"><h3 class="resultLabel">逐字拆解：</h3><div class="detailList">${detailRows}</div></section>`;
+  const notes = [];
+  if (missing.length) notes.push(`<span class="warn">未收錄字：</span>${escapeHtml([...new Set(missing)].join('、'))}。請用下方「手動注音轉數字」，或在原始碼 charZhuyin 字庫中新增。`);
+  if (ignored.length) notes.push(`<span class="warn">已略過：</span>${escapeHtml([...new Set(ignored)].join(' '))}（中英文請分開輸入）`);
+  note.innerHTML = notes.join('<br>');
+}
+
+function convertManualZhuyin(){
+  const input = document.getElementById('manualZhuyin').value.trim();
+  const result = document.getElementById('result');
+  const note = document.getElementById('note');
+  note.innerHTML = '';
+  if (!input){ result.innerHTML = '<div class="resultEmpty">請先輸入注音。</div>'; return; }
+  const syllables = input.split(/[\s\/]+/).filter(Boolean);
+  const converted = syllables.map(zy => zhuyinToNumbers(zy).join(' '));
+  const detailRows = syllables.map((zy,index) => `<div class="detailRow"><span class="detailChar">${index + 1}</span><span>${escapeHtml(zy)}</span><span class="detailCode">${escapeHtml(converted[index])}</span></div>`).join('');
+  result.innerHTML = `
+    <h2 class="resultName">手動注音：${escapeHtml(input)}</h2>
+    <section class="resultSection"><h3 class="resultLabel">數字密碼：</h3><p class="codeLine">${escapeHtml(converted.join(' / '))}</p></section>
+    <section class="resultSection"><h3 class="resultLabel">連在一起：</h3><p class="codeLine compact">${escapeHtml(converted.map(g=>g.replaceAll(' ','')).join(''))}</p></section>
+    <section class="resultSection"><h3 class="resultLabel">逐字拆解：</h3><div class="detailList">${detailRows}</div></section>`;
+}
+
+function fillSample(s){ document.getElementById('nameInput').value = s; convertName(); }
+async function copyResult(){
+  const text = document.getElementById('result').innerText;
+  try{ await navigator.clipboard.writeText(text.trim()); document.getElementById('note').textContent = '已複製結果。'; }
+  catch(e){ document.getElementById('note').textContent = '無法自動複製，請手動選取結果。'; }
+}
+
+
+function renderMorseGrid(){
+  const keys = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+  return '<div class="tableGrid">' + keys.map(k => `<div class="codeItem"><b>${k}</b><span>${morse[k]}</span></div>`).join('') + '</div>';
+}
+
+function renderZhuyinGrid(){
+  const tone = '<div class="codeItem"><b>一聲</b><span>1</span></div><div class="codeItem"><b>二聲</b><span>2</span></div><div class="codeItem"><b>三聲</b><span>3</span></div><div class="codeItem"><b>四聲</b><span>4</span></div><div class="codeItem"><b>輕聲</b><span>0</span></div>';
+  return '<div class="tableGrid">' + zhuyinOrder.map((z,i) => `<div class="codeItem"><b>${z}</b><span>${i+1}</span></div>`).join('') + tone + '</div>';
+}
+
+function renderTableBlock(title, inner){
+  return `<section class="tableBlock">${inner}</section>`;
+}
+
+let tableFontSize = 15;
+function changeTableFont(delta){
+  tableFontSize = Math.min(96, Math.max(12, tableFontSize + delta * 4));
+  document.documentElement.style.setProperty('--tableCodeSize', tableFontSize + 'px');
+  document.documentElement.style.setProperty('--tableKeySize', Math.round(tableFontSize * 1.08) + 'px');
+  document.documentElement.style.setProperty('--tableTitleSize', Math.round(Math.min(88, tableFontSize * 1.35)) + 'px');
+}
+
+function toggleFullscreenTable(id){
+  const modal = document.getElementById(id);
+  if(!modal) return;
+  if(modal.classList.contains('fullscreenTable')){
+    modal.classList.remove('fullscreenTable');
+    const saved = modal.dataset.beforeFullscreen;
+    if(saved !== undefined){
+      modal.setAttribute('style', saved);
+      delete modal.dataset.beforeFullscreen;
+    }
+    return;
+  }
+  modal.dataset.beforeFullscreen = modal.getAttribute('style') || '';
+  modal.classList.add('fullscreenTable');
+}
+
+function openTable(type){
+  const overlay = document.getElementById('tableOverlay');
+  const morseModal = document.getElementById('morseModal');
+  const zhuyinModal = document.getElementById('zhuyinModal');
+  const morseContent = document.getElementById('morseModalContent');
+  const zhuyinContent = document.getElementById('zhuyinModalContent');
+
+  overlay.classList.add('show');
+
+  if(type === 'morse' || type === 'both'){
+    morseContent.innerHTML = renderTableBlock('英文摩斯密碼對照表', renderMorseGrid());
+    morseModal.style.display = 'flex';
+  }
+
+  if(type === 'zhuyin' || type === 'both'){
+    zhuyinContent.innerHTML = renderTableBlock('中文注音數字密碼對照表', renderZhuyinGrid());
+    zhuyinModal.style.display = 'flex';
+  }
+}
+
+function closeTable(type){
+  const overlay = document.getElementById('tableOverlay');
+  const morseModal = document.getElementById('morseModal');
+  const zhuyinModal = document.getElementById('zhuyinModal');
+  if(type === 'morse') morseModal.style.display = 'none';
+  else if(type === 'zhuyin') zhuyinModal.style.display = 'none';
+  else {
+    morseModal.style.display = 'none';
+    zhuyinModal.style.display = 'none';
+  }
+  if(getComputedStyle(morseModal).display === 'none' && getComputedStyle(zhuyinModal).display === 'none'){
+    overlay.classList.remove('show');
+  }
+}
+
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeTable(); });
+
+(function enableDrag(){
+  let dragging = false, activeModal = null, activeHandle = null;
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  function clamp(v, min, max){ return Math.min(Math.max(v, min), max); }
+
+  document.querySelectorAll('[data-drag-handle]').forEach(handle => {
+    handle.addEventListener('pointerdown', (e) => {
+      if(e.target.closest('button')) return;
+      const modal = document.getElementById(handle.dataset.dragHandle);
+      const rect = modal.getBoundingClientRect();
+      if(e.clientX > rect.right - 34 && e.clientY > rect.bottom - 34) return;
+      dragging = true;
+      activeModal = modal;
+      activeHandle = handle;
+      modal.dataset.moved = '1';
+      modal.style.left = rect.left + 'px';
+      modal.style.right = 'auto';
+      modal.style.top = rect.top + 'px';
+      modal.style.transform = 'none';
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      handle.setPointerCapture(e.pointerId);
+    });
+
+    handle.addEventListener('pointermove', (e) => {
+      if(!dragging || !activeModal) return;
+      const rect = activeModal.getBoundingClientRect();
+      const nextLeft = clamp(startLeft + e.clientX - startX, 8, window.innerWidth - rect.width - 8);
+      const nextTop = clamp(startTop + e.clientY - startY, 8, window.innerHeight - rect.height - 8);
+      activeModal.style.left = nextLeft + 'px';
+      activeModal.style.top = nextTop + 'px';
+    });
+
+    handle.addEventListener('pointerup', (e) => {
+      dragging = false;
+      activeModal = null;
+      try{ activeHandle?.releasePointerCapture(e.pointerId); }catch(err){}
+      activeHandle = null;
+    });
+  });
+})();
+
+(function enableEdgeResize(){
+  let resizing = false, activeModal = null, activeHandle = null, dir = '';
+  let startX = 0, startY = 0, startLeft = 0, startTop = 0, startWidth = 0, startHeight = 0;
+  const minWidth = 320;
+  const minHeight = 240;
+
+  function clamp(v, min, max){ return Math.min(Math.max(v, min), max); }
+
+  document.querySelectorAll('.resizeHandle').forEach(handle => {
+    handle.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const modal = handle.closest('.modal');
+      const rect = modal.getBoundingClientRect();
+      resizing = true;
+      activeModal = modal;
+      activeHandle = handle;
+      dir = handle.dataset.resize || '';
+      modal.dataset.moved = '1';
+      modal.style.left = rect.left + 'px';
+      modal.style.right = 'auto';
+      modal.style.top = rect.top + 'px';
+      modal.style.transform = 'none';
+      modal.style.width = rect.width + 'px';
+      modal.style.height = rect.height + 'px';
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      startWidth = rect.width;
+      startHeight = rect.height;
+      handle.setPointerCapture(e.pointerId);
+    });
+
+    handle.addEventListener('pointermove', (e) => {
+      if(!resizing || !activeModal) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      let nextLeft = startLeft;
+      let nextTop = startTop;
+      let nextWidth = startWidth;
+      let nextHeight = startHeight;
+
+      if(dir.includes('e')) nextWidth = startWidth + dx;
+      if(dir.includes('s')) nextHeight = startHeight + dy;
+      if(dir.includes('w')){
+        nextWidth = startWidth - dx;
+        nextLeft = startLeft + dx;
+      }
+      if(dir.includes('n')){
+        nextHeight = startHeight - dy;
+        nextTop = startTop + dy;
+      }
+
+      const maxWidth = window.innerWidth - 16;
+      const maxHeight = window.innerHeight - 16;
+      nextWidth = clamp(nextWidth, minWidth, maxWidth);
+      nextHeight = clamp(nextHeight, minHeight, maxHeight);
+
+      if(dir.includes('w')) nextLeft = startLeft + (startWidth - nextWidth);
+      if(dir.includes('n')) nextTop = startTop + (startHeight - nextHeight);
+      nextLeft = clamp(nextLeft, 8, window.innerWidth - nextWidth - 8);
+      nextTop = clamp(nextTop, 8, window.innerHeight - nextHeight - 8);
+
+      activeModal.style.left = nextLeft + 'px';
+      activeModal.style.top = nextTop + 'px';
+      activeModal.style.width = nextWidth + 'px';
+      activeModal.style.height = nextHeight + 'px';
+    });
+
+    handle.addEventListener('pointerup', (e) => {
+      resizing = false;
+      activeModal = null;
+      try{ activeHandle?.releasePointerCapture(e.pointerId); }catch(err){}
+      activeHandle = null;
+    });
+  });
+})();
+
+function renderTable(){
+  let html = '<table><thead><tr><th>注音</th><th>數字</th><th>注音</th><th>數字</th><th>注音</th><th>數字</th></tr></thead><tbody>';
+  for(let i=0;i<13;i++){
+    html += '<tr>';
+    for(let j=0;j<3;j++){
+      const idx = i + j*13;
+      if(zhuyinOrder[idx]) html += `<td>${zhuyinOrder[idx]}</td><td>${idx+1}</td>`;
+      else html += '<td></td><td></td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  const holder = document.getElementById('zhuyinTable');
+  if(holder) holder.innerHTML = html;
+}
+renderTable();
+document.getElementById('charCount').textContent = `目前已收錄 ${Object.keys(charZhuyin).length} 個常用中文字。`;
+fillSample('許榮哲');
+</script>
+
+
+
+<script src="game-bar.js?v=1"></script>
+</body></html>

@@ -16,7 +16,46 @@ st.textContent='body{padding-bottom:calc(var(--gbar,64px) + env(safe-area-inset-
  '@media (max-width:360px){#gameBar a{width:31px;height:31px}#gameBar svg{width:17px;height:17px}}';
 document.head.appendChild(st);
 const toG=document.getElementById('toGames');if(toG)toG.style.display='none';
-if(inFrame)return;
+if(inFrame){try{gameSync();}catch(e){console.warn('[遊戲同步] 啟動失敗',e);}return;}
+/* 2026-11-04：在簡報同步視窗裡，遊戲裡的操作也讓手機、桌機同步。
+   點擊、輸入、送出都會傳給另一台照做；變色賓果有隨機，所以改傳整個盤面。 */
+function gameSync(){
+  const P=window.parent;const qs=new URLSearchParams(P.location.search);
+  if(!qs.has('sync')||!P.firebase||!P.firebase.database)return;
+  const room=qs.get('sync')||'demo';if(!/^[A-Za-z0-9_-]{4,60}$/.test(room))return;
+  const ref=P.firebase.database().ref('rooms/'+room+'/screen/gameCmd');
+  const node='g-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+  const page=location.pathname.split('/').pop()||'index.html';
+  const isBingo=!!document.querySelector('.board .tile .tile-number')&&typeof window.updateStatus==='function';
+  let seq=0,first=true,lastId='';
+  const pathOf=el=>{const p=[];while(el&&el!==document.body){const par=el.parentElement;if(!par)return null;p.unshift([...par.children].indexOf(el));el=par;}return el===document.body?p:null;};
+  const byPath=p=>{let el=document.body;for(const i of p||[]){el=el&&el.children[i];}return el||null;};
+  const send=(kind,extra)=>{ref.set(Object.assign({id:node+'-'+(++seq),source:node,page,kind,at:P.firebase.database.ServerValue.TIMESTAMP},extra)).catch(e=>console.warn('[遊戲同步] 寫入失敗',e));};
+  const bingoState=()=>{const t=[...document.querySelectorAll('.board .tile')];return{nums:t.map(x=>x.dataset.number||''),sel:t.map((x,i)=>x.classList.contains('selected')?i:-1).filter(i=>i>=0),latest:t.findIndex(x=>x.classList.contains('latest'))};};
+  const applyBingo=st=>{const t=[...document.querySelectorAll('.board .tile')];if(!st||!Array.isArray(st.nums)||st.nums.length!==t.length)return;
+    t.forEach((x,i)=>{const n=st.nums[i];x.dataset.number=n;const l=x.querySelector('.tile-number');if(l)l.textContent=n;x.setAttribute('aria-label','標記 '+n);
+      const on=(st.sel||[]).includes(i);x.classList.toggle('selected',on);x.classList.toggle('latest',i===st.latest);x.setAttribute('aria-pressed',String(on));});
+    if(st.latest>=0){const x=t[st.latest];x.classList.remove('drawn');void x.offsetWidth;x.classList.add('drawn');}
+    try{window.updateStatus();}catch(_){}};
+  document.addEventListener('click',e=>{if(!e.isTrusted)return;
+    if(e.target.closest&&e.target.closest('#gameBar'))return;
+    if(isBingo){setTimeout(()=>send('state',{state:bingoState()}),30);return;}
+    const sb=e.target.closest&&e.target.closest('button[type=submit],input[type=submit]');if(sb)return; // 送出交給 submit 事件
+    const p=pathOf(e.target);if(p)send('click',{path:p});},true);
+  document.addEventListener('input',e=>{if(!e.isTrusted||isBingo)return;const p=pathOf(e.target);if(p)send('input',{path:p,value:String(e.target.value||'')});},true);
+  document.addEventListener('submit',e=>{if(!e.isTrusted||isBingo)return;const p=pathOf(e.target);if(p)send('submit',{path:p});},true);
+  ref.on('value',snap=>{const c=snap.val();if(first){first=false;return;}
+    if(!c||c.source===node||c.id===lastId||c.page!==page)return;lastId=c.id;
+    try{
+      if(c.kind==='state'&&isBingo){applyBingo(c.state);return;}
+      const el=byPath(c.path);if(!el)return;
+      if(c.kind==='click')el.click();
+      else if(c.kind==='input'){el.value=c.value;el.dispatchEvent(new Event('input',{bubbles:true}));}
+      else if(c.kind==='submit'&&el.requestSubmit)el.requestSubmit();
+    }catch(err){console.warn('[遊戲同步] 套用失敗',err);}
+  },err=>console.warn('[遊戲同步] 讀取失敗',err));
+  addEventListener('pagehide',()=>{try{ref.off();}catch(_){}});
+}
 const mk=(key,title,href,color,onClick)=>{const a=document.createElement('a');a.href=href;a.title=title;a.setAttribute('aria-label',title);
   a.innerHTML=ICON[key];a.style.background=color;const s=a.querySelector('svg');if(s){s.removeAttribute('width');s.removeAttribute('height');}
   if(onClick)a.addEventListener('click',e=>{e.preventDefault();onClick();});return a;};
