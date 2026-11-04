@@ -1,0 +1,2842 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>故事賓果｜16 道人生求救題</title>
+<style>
+
+:root{
+  --bg-1:#F8F5EE;
+  --bg-2:#ECE5D4;
+  --surface:#FFFFFF;
+  --border:#E3DDC9;
+  --ink:#2A2924;
+  --muted:#9C9686;
+  --accent:#D7263D;
+  --accent-dark:#A81F30;
+  --accent-soft:#FCEAEA;
+  --lit-bg:#EAF2FC;
+  --lit-border:#3E82C7;
+  --lit-ink:#1B5A93;
+  --win-from:#22B37F;
+  --win-to:#0F8F63;
+  --win-border:#0B6B4D;
+  --radius-lg:18px;
+  --radius-md:12px;
+  --radius-sm:8px;
+  --shadow-sm:0 1px 3px rgba(42,41,36,.06);
+  --shadow-md:0 8px 20px rgba(42,41,36,.10);
+  --shadow-lg:0 16px 36px rgba(42,41,36,.18);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  color: var(--ink);
+  padding: 10px 12px;
+}
+.header, #status { display: none !important; }
+
+.wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.layout {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* ---------- 左側題目板 ---------- */
+#boardPanel {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: 1px solid rgba(227,221,201,.78);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,.26);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+  padding: 0;
+  overflow: visible;
+  transition: flex-basis .22s ease, width .22s ease, min-width .22s ease, opacity .18s ease, padding .22s ease;
+}
+#board {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.cell {
+  position: relative;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 8px 26px 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, opacity .15s ease, background .15s ease;
+}
+.cell:active { transform: scale(0.98); }
+.cell .q {
+  width: 100%;
+  text-align: left;
+  font-size: clamp(13px, 1.25vw, 18px);
+  line-height: 1.28;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cell .num {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  color: var(--muted);
+  font-size: clamp(12px, 1vw, 16px);
+  font-weight: 700;
+  line-height: 1;
+}
+.cell.lit { background: var(--lit-bg); border-color: var(--lit-border); }
+.cell.lit .q { color: var(--lit-ink); font-weight: 800; }
+.cell.lit .num { color: #6FA3D2; }
+.cell.selected {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md), inset 0 0 0 2px rgba(215,38,61,.28);
+  transform: translateY(-2px);
+  z-index: 6;
+}
+.cell.selected .q { color: var(--accent-dark); font-weight: 900; }
+.cell.selected .num { color: var(--accent); }
+.cell.win {
+  background: linear-gradient(135deg, var(--win-from), var(--win-to));
+  border-color: var(--win-border);
+  animation: winGlow 1.8s ease-in-out infinite;
+}
+.cell.win .q { color: #FFFFFF; font-weight: 800; }
+.cell.win .num { color: rgba(255,255,255,.75); }
+.cell.win.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: -4px;
+}
+@keyframes winGlow {
+  0%, 100% { box-shadow: var(--shadow-sm), 0 0 0 0 rgba(34,179,127,.45); }
+  50% { box-shadow: var(--shadow-md), 0 0 0 8px rgba(34,179,127,0); }
+}
+#board .cell:first-child .q { padding-left: 38px; }
+
+/* 滑入某格時，其餘格子變淡並凸顯該格 */
+#board.dim-active .cell { opacity: .32; }
+#board.dim-active .cell.hovering,
+#board.dim-active .cell.hovering .q,
+#board.dim-active .cell.hovering .num { opacity: 1; }
+#board.dim-active .cell.hovering {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  z-index: 5;
+}
+#board:not(.dim-active).locked-view .cell { opacity: 1; }
+
+/* ---------- 題目板收合按鈕 ---------- */
+#boardToggle {
+  position: absolute;
+  left: -10px;
+  top: 48px;
+  z-index: 110;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.94);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background .15s ease, color .15s ease, transform .15s ease, border-color .15s ease;
+}
+#boardToggle:hover { background: #F1EFE6; color: var(--ink); transform: translateY(-1px); }
+#boardToggle.active { color: var(--accent); border-color: var(--accent); }
+#boardToggle svg { width: 17px; height: 17px; }
+
+/* ---------- 重新開始按鈕 ---------- */
+.wrap > .btnrow {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 0;
+  height: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+#reset {
+  pointer-events: auto;
+  width: 42px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #E4444B, var(--accent-dark));
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+#reset:hover { transform: scale(1.08) rotate(-14deg); box-shadow: var(--shadow-lg); }
+#reset:active { transform: scale(.96); }
+
+#medbtn, #zoomReset, #placeholder { display: none !important; }
+
+/* ---------- 故事欄收合按鈕 ---------- */
+#panelToggle {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 100;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.9);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+#panelToggle:hover { background: #F1EFE6; color: var(--ink); }
+#panelToggle.active { color: var(--accent); border-color: var(--accent); }
+#panelToggle svg { width: 16px; height: 16px; }
+
+/* ---------- 右側面板 ---------- */
+.layout { transition: gap .2s ease; }
+.layout.panel-collapsed { gap: 0; }
+.layout.board-collapsed { gap: 8px; }
+.layout.board-collapsed #boardPanel {
+  flex: 0 0 52px;
+  width: 52px;
+  min-width: 52px;
+  padding: 0;
+  border-color: var(--accent);
+  background: rgba(255,255,255,.72);
+  overflow: hidden;
+}
+.layout.board-collapsed #board {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.layout.board-collapsed #boardToggle {
+  left: 10px;
+  top: 10px;
+}
+.layout.board-collapsed #boardToggle svg {
+  transform: rotate(180deg);
+}
+.layout.board-collapsed ~ .btnrow {
+  opacity: 0;
+  pointer-events: none;
+}.layout.board-collapsed #panel {
+  flex-basis: clamp(520px, 42vw, 680px);
+  width: clamp(520px, 42vw, 680px);
+  padding: 18px 16px 16px;
+  gap: 14px;
+}
+.layout.board-collapsed #zoomSlot {
+  width: 100%;
+  min-height: 72px;
+  padding: 14px 16px;
+}
+.layout.board-collapsed #zoomBox {
+  align-items: center;
+  justify-content: flex-start;
+}
+.layout.board-collapsed #zoomBox .zoom-q {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: calc(100% - 34px);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  overflow: visible;
+  font-size: clamp(36px, 2.7vw, 54px);
+  line-height: 1.45;
+  font-weight: 900;
+}
+.layout.board-collapsed #zoomBox .zoom-num {
+  font-size: clamp(26px, 1.75vw, 36px);
+  right: 6px;
+  bottom: 6px;
+}
+.layout.board-collapsed #panelMain {
+  gap: 14px;
+}
+.layout.board-collapsed #qnum {
+  flex-basis: 70px;
+  width: 70px;
+}
+.layout.board-collapsed #qnum .qnum-value {
+  font-size: clamp(40px, 2.55vw, 58px);
+  line-height: 1.24;
+}
+.layout.board-collapsed #storyarea {
+  gap: 18px;
+}
+.layout.board-collapsed #storyarea .stage {
+  font-size: clamp(31px, 1.95vw, 44px);
+  line-height: 1.45;
+}
+.layout.board-collapsed #storyarea .stage:not(:last-child) {
+  padding-left: 18px;
+}
+.layout.board-collapsed .tag {
+  font-size: clamp(25px, 1.5vw, 34px);
+  padding: 8px 6px;
+  margin-bottom: 12px;
+}
+#panel {
+  transition: flex-basis .2s ease, width .2s ease, opacity .15s ease, padding .2s ease;
+}
+.layout.panel-collapsed #panel {
+  flex-basis: 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  border-width: 0 !important;
+}
+.layout.panel-collapsed #zoomSlot {
+  aspect-ratio: auto !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+}
+.layout.panel-collapsed #panelMain,
+.layout.panel-collapsed #qnum,
+.layout.panel-collapsed #storyarea .stage {
+  width: 0 !important;
+  min-width: 0 !important;
+  flex-basis: 0 !important;
+}
+.layout.panel-collapsed #board .cell:nth-child(4) .q { padding-right: 30px; }
+#panel {
+  flex: 0 0 clamp(260px, 23vw, 340px);
+  width: clamp(260px, 23vw, 340px);
+  height: 100%;
+  min-height: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+#zoomSlot {
+  flex: 0 0 auto;
+  width: 100%;
+  align-self: center;
+  height: var(--right-question-height, 56px);
+  aspect-ratio: var(--cell-aspect, 1.85);
+  min-height: 36px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: #FBFAF5;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: border-color .15s ease, background .15s ease;
+}
+#zoomSlot:has(#zoomBox.locked) {
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+}
+#zoomBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.28;
+  white-space: normal;
+  word-break: break-word;
+}
+#zoomBox:empty::before {
+  content: "滑到左側題目，看放大內容";
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: .5px;
+}
+#zoomBox .zoom-q {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  font-size: clamp(19px, 1.65vw, 26px);
+  line-height: 1.34;
+  font-weight: 700;
+  color: var(--ink);
+}
+#zoomBox.locked { cursor: pointer; }
+#zoomBox.locked .zoom-q { color: var(--accent-dark); }
+#zoomBox .zoom-num {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#panelMain {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: stretch;
+  gap: 10px;
+  overflow: hidden;
+}
+#qnum {
+  flex: 0 0 42px;
+  width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+#qnum .qnum-value {
+  display: inline-block;
+  color: var(--accent-dark);
+  font-weight: 900;
+  font-size: clamp(22px, 1.75vw, 30px);
+  line-height: 1.32;
+  letter-spacing: 1px;
+}
+
+#storyarea {
+  flex: 1 1 auto;
+  display: none;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+#storyarea .stage {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  font-family: "DFKai-SB", "BiauKai", "標楷體", "KaiTi", serif;
+  font-size: clamp(19px, 1.45vw, 25px);
+  line-height: 1.5;
+  letter-spacing: .5px;
+  color: var(--ink);
+}
+#storyarea .stage:not(:last-child) {
+  border-left: 1px dashed var(--border);
+  padding-left: 10px;
+}
+.tag {
+  display: inline-block;
+  background: #181818;
+  color: #FFFFFF;
+  font-family: "DFKai-SB", "BiauKai", "標楷體", "KaiTi", serif;
+  font-weight: 700;
+  font-size: clamp(16px, 1.2vw, 21px);
+  line-height: 1.1;
+  letter-spacing: .5px;
+  padding: 5px 3px;
+  margin: 0 0 8px 0;
+  border-radius: 5px;
+}
+.tag.t1 { box-shadow: inset 0 -3px 0 #A9A48F; }
+.tag.t2 { box-shadow: inset 0 -3px 0 #F1C948; }
+.tag.t3 { box-shadow: inset 0 -3px 0 #2FAE79; }
+
+@media (max-width: 860px) {
+  html, body { overflow: auto; height: auto; }
+  body { min-height: 100vh; }
+  .layout { flex-direction: column; }
+  #boardPanel { height: auto; min-height: 520px; }
+  #board { grid-template-rows: repeat(4, minmax(92px, auto)); height: auto; }
+  .layout.board-collapsed #boardPanel { flex-basis: 46px; width: 46px; min-width: 46px; min-height: 46px; }
+  #panel { width: 100%; flex: 0 0 400px; height: 400px; }
+  #zoomSlot { flex-basis: 56px; height: 56px; min-height: 36px; }
+  #panelMain { min-height: 250px; }
+}
+
+
+
+/* 2026-07-05 調整：右側題目欄縮窄，三段故事欄加寬，上方對齊 */
+#panel {
+  gap: 6px !important;
+}
+#zoomSlot {
+  height: var(--right-question-height, 48px) !important;
+  min-height: 44px !important;
+  padding: 5px 8px !important;
+  align-self: stretch !important;
+}
+#zoomBox .zoom-q {
+  font-size: clamp(16px, 1.18vw, 22px) !important;
+  line-height: 1.22 !important;
+  -webkit-line-clamp: 3 !important;
+}
+#zoomBox .zoom-num {
+  font-size: clamp(11px, .85vw, 14px) !important;
+}
+#panelMain {
+  gap: 6px !important;
+  align-items: stretch !important;
+}
+#qnum {
+  flex: 0 0 30px !important;
+  width: 30px !important;
+}
+#qnum .qnum-value {
+  font-size: clamp(20px, 1.48vw, 28px) !important;
+  line-height: 1.2 !important;
+}
+#storyarea {
+  gap: 8px !important;
+  align-items: stretch !important;
+}
+#storyarea .stage {
+  flex: 1 1 0 !important;
+  font-size: clamp(20px, 1.52vw, 27px) !important;
+  line-height: 1.52 !important;
+}
+#storyarea .stage:not(:last-child) {
+  padding-left: 8px !important;
+}
+.tag {
+  font-size: clamp(17px, 1.28vw, 23px) !important;
+  padding: 5px 3px !important;
+  margin-bottom: 8px !important;
+}
+.layout.board-collapsed #zoomSlot {
+  min-height: 56px !important;
+  padding: 8px 12px !important;
+}
+.layout.board-collapsed #zoomBox .zoom-q {
+  font-size: clamp(30px, 2.2vw, 44px) !important;
+}
+.layout.board-collapsed #storyarea .stage {
+  font-size: clamp(33px, 2.15vw, 46px) !important;
+}
+.layout.board-collapsed .tag {
+  font-size: clamp(26px, 1.65vw, 36px) !important;
+}
+
+
+
+/* 2026-07-05 依截圖再調整：題目字體加大、篇名上提、故事欄加寬 */
+#zoomSlot {
+  min-height: 48px !important;
+  padding: 5px 8px !important;
+}
+#zoomBox .zoom-q {
+  font-size: clamp(18px, 1.34vw, 25px) !important;
+  line-height: 1.23 !important;
+  font-weight: 800 !important;
+  -webkit-line-clamp: 3 !important;
+}
+#zoomBox .zoom-num {
+  font-size: clamp(11px, .85vw, 14px) !important;
+}
+#panelMain {
+  gap: 6px !important;
+}
+#qnum {
+  flex: 0 0 26px !important;
+  width: 26px !important;
+  min-width: 26px !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  padding-top: 78px !important;
+}
+#qnum .qnum-value {
+  font-size: clamp(21px, 1.52vw, 29px) !important;
+  line-height: 1.14 !important;
+}
+#storyarea {
+  gap: 9px !important;
+}
+#storyarea .stage {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  font-size: clamp(20px, 1.53vw, 27px) !important;
+  line-height: 1.52 !important;
+}
+#storyarea .stage:not(:last-child) {
+  padding-left: 8px !important;
+}
+.tag {
+  font-size: clamp(17px, 1.28vw, 23px) !important;
+  padding: 5px 3px !important;
+}
+.layout.board-collapsed #qnum {
+  padding-top: 104px !important;
+  flex-basis: 40px !important;
+  width: 40px !important;
+}
+.layout.board-collapsed #zoomBox .zoom-q {
+  font-size: clamp(34px, 2.45vw, 50px) !important;
+}
+
+
+
+/* 2026-07-05 修改：滑鼠移到右側欄時，左側表格全部變淡 */
+.layout.panel-hover #board .cell {
+  opacity: .25 !important;
+}
+
+
+
+/* 2026-07-05 修改：滑鼠移到左側表格時，右側故事內容隱藏 */
+.layout.left-board-hover #qnum,
+.layout.left-board-hover #storyarea {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: opacity .12s ease !important;
+}
+
+
+
+/* 2026-07-05 修改：左側收合後，右側顯示故事大綱 */
+#outlineBox {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: "DFKai-SB", "BiauKai", "標楷體", "KaiTi", serif;
+  color: var(--ink);
+  background: #FBFAF5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 18px 18px 14px;
+  font-size: clamp(23px, 1.55vw, 34px);
+  line-height: 1.55;
+  letter-spacing: 1px;
+  overflow: hidden;
+}
+.layout.board-collapsed #panelMain {
+  display: none !important;
+}
+.layout.board-collapsed #outlineBox {
+  display: block !important;
+}
+.layout.board-collapsed #zoomSlot {
+  flex: 0 0 auto;
+  min-height: 64px;
+}
+@media (max-width: 860px) {
+  #outlineBox {
+    font-size: 22px;
+  }
+}
+
+
+
+/* 2026-07-05 修改：左側收合後，原以為／沒想到／最後三欄改顯示第一題故事大綱 */
+.layout.board-collapsed #outlineBox {
+  display: none !important;
+}
+.layout.board-collapsed #zoomSlot {
+  display: none !important;
+}
+.layout.board-collapsed #panelMain {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
+.layout.board-collapsed #qnum {
+  display: flex !important;
+  flex: 0 0 72px !important;
+  width: 72px !important;
+}
+.layout.board-collapsed #qnum .qnum-value {
+  font-size: clamp(36px, 2.4vw, 54px) !important;
+  line-height: 1.22 !important;
+}
+.layout.board-collapsed #storyarea {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  gap: 18px !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .tag {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  font-size: clamp(30px, 1.85vw, 43px) !important;
+  line-height: 1.55 !important;
+  letter-spacing: 1px !important;
+  padding-top: 0 !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  display: block !important;
+}
+
+
+
+/* 2026-07-05 修改：左側收合後，故事大綱行距加大 */
+.layout.board-collapsed #storyarea .stage,
+.layout.board-collapsed #storyarea .stage > span:not(.tag),
+.layout.board-collapsed #storyarea .outline-text {
+  line-height: 1.85 !important;
+  letter-spacing: 1px !important;
+}
+.layout.board-collapsed #storyarea {
+  gap: 22px !important;
+}
+
+
+
+/* 2026-07-05 修正：左側收起來之後，右側佔據全版面 */
+.layout.board-collapsed {
+  gap: 0 !important;
+}
+.layout.board-collapsed #boardPanel {
+  flex: 0 0 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border-width: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+.layout.board-collapsed #boardToggle {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  left: 10px !important;
+  top: 10px !important;
+  position: fixed !important;
+}
+.layout.board-collapsed #panel {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  padding: 18px 18px 16px !important;
+  gap: 16px !important;
+}
+.layout.board-collapsed #zoomSlot {
+  width: 100% !important;
+  height: 96px !important;
+  min-height: 86px !important;
+  padding: 14px 18px !important;
+}
+.layout.board-collapsed #panelMain {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  gap: 22px !important;
+}
+.layout.board-collapsed #storyarea {
+  flex: 1 1 auto !important;
+  gap: 30px !important;
+}
+.layout.board-collapsed #storyarea .stage {
+  font-size: clamp(28px, 2.0vw, 42px) !important;
+  line-height: 1.85 !important;
+}
+.layout.board-collapsed .tag {
+  font-size: clamp(22px, 1.5vw, 32px) !important;
+  padding: 8px 6px !important;
+  margin-bottom: 16px !important;
+}
+.layout.board-collapsed #qnum .qnum-value {
+  font-size: clamp(36px, 2.4vw, 54px) !important;
+  line-height: 1.25 !important;
+}
+
+
+
+/* 2026-07-05 修改：一鍵復原按鍵 */
+#restoreAll {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  border: 1px solid var(--border);
+  background: #FBFAF5;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+#restoreAll:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+#restoreAll:active {
+  transform: translateY(1px) scale(.98);
+}
+.layout.board-collapsed ~ .btnrow {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+
+
+/* 2026-07-05 修正：左側收合後，收合/展開按鍵必須常駐可見 */
+.layout.board-collapsed #boardPanel {
+  flex: 0 0 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+.layout.board-collapsed #board {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.layout.board-collapsed #boardToggle {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  position: fixed !important;
+  left: 18px !important;
+  top: 18px !important;
+  z-index: 99999 !important;
+  width: 54px !important;
+  height: 54px !important;
+}
+.layout.board-collapsed #panel {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+
+
+/* 2026-07-05 修改：右欄加入底色，和左側十六格產生區隔 */
+#panel {
+  background: #F4F0E6 !important;
+  border: 1.5px solid #DED6C6 !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.55), 0 8px 24px rgba(80,70,45,.08) !important;
+}
+#zoomSlot {
+  background: rgba(255,255,255,.68) !important;
+}
+#panelMain {
+  background: transparent !important;
+}
+.layout.board-collapsed #panel {
+  background: #F4F0E6 !important;
+}
+
+
+
+/* 2026-07-05 調整：右側欄黑色底色 */
+#panel {
+  background: #000 !important;
+  border-color: #111 !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,.26) !important;
+}
+#panelMain {
+  background: #000 !important;
+  color: #fff !important;
+}
+#placeholder {
+  color: rgba(255,255,255,.55) !important;
+}
+#storyarea .stage {
+  color: #fff !important;
+  border-color: rgba(255,255,255,.22) !important;
+}
+#qnum {
+  color: #fff !important;
+}
+#qnum .qnum-value {
+  color: #fff !important;
+}
+#medbtn {
+  color: #fff !important;
+}
+
+
+
+/* 2026-07-05 修正：右上題目框白底黑字 */
+#zoomSlot {
+  background: #fff !important;
+  border: 2px solid var(--accent) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.18) !important;
+}
+#zoomBox,
+#zoomBox.locked {
+  background: transparent !important;
+  color: #111 !important;
+}
+#zoomBox .zoom-q,
+#zoomBox.locked .zoom-q {
+  color: #111 !important;
+}
+#zoomBox .zoom-num {
+  color: #777 !important;
+}
+#zoomBox:empty::before {
+  color: #999 !important;
+}
+
+
+
+/* 2026-07-05 修正：上方題目去紅邊，三個故事標籤改黃底 */
+#zoomSlot {
+  background: #fff !important;
+  border: none !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.18) !important;
+}
+#zoomBox,
+#zoomBox.locked,
+#zoomBox .zoom-q,
+#zoomBox.locked .zoom-q {
+  color: #111 !important;
+}
+#storyarea .tag,
+#storyarea .tag.t1,
+#storyarea .tag.t2,
+#storyarea .tag.t3 {
+  background: #F1C948 !important;
+  color: #111 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+
+
+/* 2026-07-05 最終修正：初始右欄黑底、上方白底無紅邊、故事標籤黃底 */
+#panel {
+  background: #000 !important;
+  border-color: #111 !important;
+}
+#zoomSlot {
+  background: #fff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+#zoomBox, #zoomBox.locked, #zoomBox .zoom-q, #zoomBox.locked .zoom-q {
+  color: #111 !important;
+}
+#storyarea .tag,
+#storyarea .tag.t1,
+#storyarea .tag.t2,
+#storyarea .tag.t3 {
+  background: #F1C948 !important;
+  color: #111 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+#storyarea .stage, #storyarea .stage > span:not(.tag), #qnum .qnum-value {
+  color: #fff !important;
+}
+
+
+
+/* 2026-07-05 修改：移除右上題目欄，點左側題目直接顯示故事 */
+#zoomSlot {
+  display: none !important;
+}
+#panel {
+  justify-content: flex-start !important;
+}
+#panelMain {
+  padding-top: 8px !important;
+}
+#qnum {
+  display: none;
+  margin-top: 0 !important;
+}
+#qnum .qnum-value {
+  color: #fff !important;
+  font-size: clamp(30px, 2.2vw, 46px) !important;
+  font-weight: 900 !important;
+  line-height: 1.18 !important;
+}
+#storyarea {
+  margin-top: 6px !important;
+}
+.layout.board-collapsed #panelMain {
+  padding-top: 10px !important;
+}
+.layout.board-collapsed #qnum .qnum-value {
+  font-size: clamp(40px, 2.8vw, 60px) !important;
+}
+
+
+
+/* 2026-07-05 修改：滑鼠移到左側表格時字體放大；點下去後維持原本大小 */
+.cell .q,
+.cell .num {
+  transition: font-size .15s ease, transform .15s ease, color .15s ease, opacity .15s ease;
+}
+#board.dim-active .cell.hovering .q {
+  font-size: clamp(15px, 1.38vw, 20px) !important;
+  line-height: 1.24 !important;
+}
+#board.dim-active .cell.hovering .num {
+  font-size: clamp(13px, 1.08vw, 17px) !important;
+}
+.cell.selected .q,
+.cell.selected .num,
+.cell.lit .q,
+.cell.lit .num,
+.cell.win .q,
+.cell.win .num {
+  font-size: inherit;
+}
+.cell.selected .q {
+  font-size: clamp(13px, 1.25vw, 18px) !important;
+  line-height: 1.28 !important;
+}
+.cell.selected .num {
+  font-size: clamp(12px, 1vw, 16px) !important;
+}
+
+
+
+/* 2026-07-05 修正：滑鼠移到左側表格時，題目字再明顯放大；點下去後不維持放大 */
+#board.dim-active .cell.hovering .q {
+  font-size: clamp(20px, 1.85vw, 30px) !important;
+  line-height: 1.16 !important;
+  font-weight: 900 !important;
+}
+#board.dim-active .cell.hovering .num {
+  font-size: clamp(16px, 1.35vw, 22px) !important;
+}
+.cell.selected .q {
+  font-size: clamp(13px, 1.25vw, 18px) !important;
+  line-height: 1.28 !important;
+}
+.cell.selected .num {
+  font-size: clamp(12px, 1vw, 16px) !important;
+}
+
+
+
+/* 2026-07-05 修正：初始畫面一定顯示左側十六格，避免空白 */
+.layout:not(.board-collapsed) #boardPanel {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+.layout:not(.board-collapsed) #board {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  display: grid !important;
+}
+#zoomSlot { display: none !important; }
+#panel { background: #000 !important; }
+#panelMain { background: #000 !important; color: #fff !important; }
+
+
+/* 移除右下的一鍵復原 */
+#restoreAll{display:none !important;}
+
+
+
+/* 2026-07-05 修改：左側收合後，右側全文模式字體縮小，避免超出 */
+.layout.board-collapsed #panel {
+  padding: 12px 14px 12px !important;
+}
+.layout.board-collapsed #panelMain {
+  gap: 16px !important;
+}
+.layout.board-collapsed #qnum {
+  flex: 0 0 62px !important;
+  width: 62px !important;
+}
+.layout.board-collapsed #qnum .qnum-value {
+  font-size: clamp(28px, 1.95vw, 44px) !important;
+  line-height: 1.18 !important;
+}
+.layout.board-collapsed #storyarea {
+  gap: 18px !important;
+}
+.layout.board-collapsed #storyarea .stage {
+  font-size: clamp(21px, 1.34vw, 31px) !important;
+  line-height: 1.62 !important;
+  letter-spacing: 0.5px !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage {
+  font-size: clamp(21px, 1.32vw, 30px) !important;
+  line-height: 1.58 !important;
+  letter-spacing: 0.5px !important;
+}
+.layout.board-collapsed .tag {
+  font-size: clamp(18px, 1.18vw, 25px) !important;
+  margin-bottom: 10px !important;
+}
+
+
+
+/* 2026-07-05 修改：移除右側故事區分隔線 */
+#storyarea .stage,
+#storyarea .stage:not(:last-child),
+.layout.board-collapsed #storyarea .stage,
+.layout.board-collapsed #storyarea .stage:not(:last-child),
+.layout.board-collapsed.outline-mode #storyarea .stage,
+.layout.board-collapsed.outline-mode #storyarea .stage:not(:last-child) {
+  border-left: none !important;
+  border-right: none !important;
+  border-inline-start: none !important;
+  border-inline-end: none !important;
+  box-shadow: none !important;
+}
+#storyarea,
+.layout.board-collapsed #storyarea,
+.layout.board-collapsed.outline-mode #storyarea {
+  background-image: none !important;
+  border: none !important;
+}
+
+
+
+/* 2026-07-05 修改：左側收合後整合成一篇，不分段、不分隔 */
+.layout.board-collapsed.outline-mode #storyarea {
+  display: flex !important;
+  gap: 0 !important;
+  padding: 18px 24px !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage {
+  border: none !important;
+  box-shadow: none !important;
+  flex: 0 0 0 !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage:first-child {
+  display: block !important;
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  font-size: clamp(22px, 1.35vw, 32px) !important;
+  line-height: 1.75 !important;
+  letter-spacing: 0.5px !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage:not(:first-child) {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .tag {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  display: block !important;
+}
+.layout.board-collapsed.outline-mode #qnum {
+  flex: 0 0 58px !important;
+  width: 58px !important;
+}
+.layout.board-collapsed.outline-mode #qnum .qnum-value {
+  font-size: clamp(30px, 2vw, 46px) !important;
+  line-height: 1.18 !important;
+}
+#restoreAll { display: none !important; }
+
+
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  white-space: pre-wrap !important;
+}
+
+
+
+/* 2026-07-05 修改：故事大綱頁字體加大，並在大綱與三段式之間加入分隔線 */
+.layout.board-collapsed.outline-mode #storyarea .stage:first-child {
+  font-size: clamp(25px, 1.55vw, 36px) !important;
+  line-height: 1.7 !important;
+  letter-spacing: .6px !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  white-space: pre-wrap !important;
+}
+.outline-main,
+.outline-three {
+  display: inline !important;
+  white-space: pre-wrap !important;
+}
+.outline-divider {
+  display: inline-block !important;
+  width: 0 !important;
+  min-height: 72% !important;
+  border-left: 3px solid rgba(255,255,255,.72) !important;
+  margin: 0 28px !important;
+  vertical-align: top !important;
+}
+.outline-three {
+  font-weight: 800 !important;
+}
+
+
+
+/* 2026-07-05 修正版：分隔線獨立成一欄，文字加大 */
+.layout.board-collapsed.outline-mode #storyarea {
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  gap: 18px !important;
+  padding: 14px 20px !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage {
+  display: block !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  font-size: clamp(30px, 1.9vw, 44px) !important;
+  line-height: 1.62 !important;
+  letter-spacing: .8px !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage:first-child {
+  flex: 1.35 1 0 !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage:nth-child(2) {
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  writing-mode: horizontal-tb !important;
+  display: flex !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage:nth-child(2) > span:not(.tag) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage:last-child {
+  display: block !important;
+  flex: 1 1 0 !important;
+  font-weight: 800 !important;
+}
+.outline-main,
+.outline-three {
+  display: block !important;
+  white-space: pre-wrap !important;
+}
+.outline-divider,
+.outline-divider-block {
+  display: block !important;
+  width: 0 !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 auto !important;
+  border-left: 3px solid rgba(255,255,255,.78) !important;
+}
+
+
+/* 2026-07-05 統一右側黑底故事格式：三段式與大綱模式使用同一版面 */
+.layout.board-collapsed #panel,
+.layout.board-collapsed.outline-mode #panel {
+  background: #000 !important;
+  border-color: #111 !important;
+  border-radius: 28px !important;
+  color: #fff !important;
+  padding: 28px 28px 24px !important;
+}
+.layout.board-collapsed #panelMain,
+.layout.board-collapsed.outline-mode #panelMain {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: row-reverse !important;
+  align-items: stretch !important;
+  gap: 26px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: #000 !important;
+  color: #fff !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed #qnum,
+.layout.board-collapsed.outline-mode #qnum {
+  display: flex !important;
+  flex: 0 0 82px !important;
+  width: 82px !important;
+  min-width: 82px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+}
+.layout.board-collapsed #qnum .qnum-value,
+.layout.board-collapsed.outline-mode #qnum .qnum-value {
+  color: #fff !important;
+  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif !important;
+  font-size: clamp(42px, 2.6vw, 64px) !important;
+  font-weight: 900 !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0 !important;
+}
+.layout.board-collapsed #storyarea,
+.layout.board-collapsed.outline-mode #storyarea {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: row-reverse !important;
+  align-items: stretch !important;
+  gap: 26px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  border: none !important;
+}
+.layout.board-collapsed #storyarea .stage,
+.layout.board-collapsed #storyarea .stage:first-child,
+.layout.board-collapsed #storyarea .stage:not(:first-child),
+.layout.board-collapsed.outline-mode #storyarea .stage,
+.layout.board-collapsed.outline-mode #storyarea .stage:first-child,
+.layout.board-collapsed.outline-mode #storyarea .stage:not(:first-child) {
+  display: block !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  color: #fff !important;
+  font-family: "DFKai-SB", "BiauKai", "標楷體", "KaiTi", serif !important;
+  font-size: clamp(30px, 2vw, 44px) !important;
+  font-weight: 700 !important;
+  line-height: 1.55 !important;
+  letter-spacing: 0 !important;
+}
+.layout.board-collapsed #storyarea .stage:not(:last-child),
+.layout.board-collapsed.outline-mode #storyarea .stage:not(:last-child) {
+  border: none !important;
+  padding-left: 0 !important;
+}
+.layout.board-collapsed #storyarea .stage > span:not(.tag),
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
+  white-space: normal !important;
+}
+.layout.board-collapsed #storyarea .tag,
+.layout.board-collapsed.outline-mode #storyarea .tag,
+.layout.board-collapsed #storyarea .tag.t1,
+.layout.board-collapsed #storyarea .tag.t2,
+.layout.board-collapsed #storyarea .tag.t3,
+.layout.board-collapsed.outline-mode #storyarea .tag.t1,
+.layout.board-collapsed.outline-mode #storyarea .tag.t2,
+.layout.board-collapsed.outline-mode #storyarea .tag.t3 {
+  display: inline-block !important;
+  background: #F3CF3F !important;
+  color: #000 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  font-family: "DFKai-SB", "BiauKai", "標楷體", "KaiTi", serif !important;
+  font-size: clamp(22px, 1.45vw, 32px) !important;
+  font-weight: 900 !important;
+  line-height: 1.12 !important;
+  padding: 8px 7px !important;
+  margin: 0 0 14px 0 !important;
+  letter-spacing: 0 !important;
+}
+.layout.board-collapsed .outline-divider,
+.layout.board-collapsed .outline-divider-block,
+.layout.board-collapsed.outline-mode .outline-divider,
+.layout.board-collapsed.outline-mode .outline-divider-block {
+  display: none !important;
+}
+
+/* 2026-07-05 依參考圖修正：收合後右側同時顯示大綱與三段式 */
+.layout.board-collapsed.outline-mode #panel {
+  display: grid !important;
+  grid-template-columns: minmax(360px, 0.45fr) 2px minmax(620px, 0.55fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  column-gap: clamp(42px, 5vw, 96px) !important;
+  background: #000 !important;
+  border-color: #111 !important;
+  border-radius: 0 !important;
+  padding: clamp(28px, 3vw, 54px) clamp(28px, 3vw, 54px) !important;
+  min-height: min(76vh, 760px) !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed.outline-mode #zoomSlot {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #panel::before {
+  content: "";
+  grid-column: 2;
+  grid-row: 1;
+  width: 2px;
+  height: 100%;
+  background: rgba(255,255,255,.68);
+  align-self: stretch;
+  justify-self: center;
+}
+.layout.board-collapsed.outline-mode #panelMain {
+  display: contents !important;
+}
+.layout.board-collapsed.outline-mode #medbtn,
+.layout.board-collapsed.outline-mode #placeholder {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #storyarea {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  align-items: flex-start !important;
+  justify-content: space-around !important;
+  gap: clamp(36px, 4vw, 76px) !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage,
+.layout.board-collapsed.outline-mode #storyarea .stage:first-child,
+.layout.board-collapsed.outline-mode #storyarea .stage:not(:first-child),
+.layout.board-collapsed.outline-mode #storyarea .stage:last-child {
+  display: block !important;
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 8.4em !important;
+  height: 100% !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  color: #fff !important;
+  font-family: DFKai-SB, KaiTi, "標楷體", serif !important;
+  font-size: clamp(28px, 1.9vw, 42px) !important;
+  line-height: 1.38 !important;
+  letter-spacing: 0 !important;
+  font-weight: 800 !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  display: inline !important;
+  white-space: pre-wrap !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .tag,
+.layout.board-collapsed.outline-mode #storyarea .tag.t1,
+.layout.board-collapsed.outline-mode #storyarea .tag.t2,
+.layout.board-collapsed.outline-mode #storyarea .tag.t3 {
+  display: inline-block !important;
+  background: #F3CF3F !important;
+  color: #000 !important;
+  border-radius: 8px !important;
+  padding: .28em .18em !important;
+  margin-bottom: .45em !important;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+  font-size: clamp(22px, 1.4vw, 31px) !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+  box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  display: block !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  width: auto !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 clamp(86px, 6vw, 128px) 0 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  white-space: pre-wrap !important;
+  overflow: hidden !important;
+  font-family: DFKai-SB, KaiTi, "標楷體", serif !important;
+  font-size: clamp(27px, 1.7vw, 39px) !important;
+  line-height: 1.48 !important;
+  letter-spacing: 0 !important;
+  font-weight: 800 !important;
+}
+.layout.board-collapsed.outline-mode #qnum {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-self: stretch !important;
+  justify-self: end !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex: none !important;
+  width: clamp(66px, 5vw, 96px) !important;
+  min-width: clamp(66px, 5vw, 96px) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  z-index: 2 !important;
+}
+.layout.board-collapsed.outline-mode #qnum .qnum-value {
+  color: #fff !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+  font-size: clamp(40px, 2.7vw, 64px) !important;
+  line-height: 1.08 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+}
+
+/* 2026-07-05 修正：字體過大時保留捲軸，不裁切內容 */
+.layout.board-collapsed.outline-mode #panel {
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+.layout.board-collapsed.outline-mode #storyarea,
+.layout.board-collapsed.outline-mode #outlineBox {
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  padding-bottom: 16px !important;
+}
+.layout.board-collapsed.outline-mode #storyarea {
+  min-width: max-content !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox {
+  min-width: 620px !important;
+}
+.layout.board-collapsed.outline-mode #panel::-webkit-scrollbar,
+.layout.board-collapsed.outline-mode #storyarea::-webkit-scrollbar,
+.layout.board-collapsed.outline-mode #outlineBox::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+.layout.board-collapsed.outline-mode #panel::-webkit-scrollbar-track,
+.layout.board-collapsed.outline-mode #storyarea::-webkit-scrollbar-track,
+.layout.board-collapsed.outline-mode #outlineBox::-webkit-scrollbar-track {
+  background: #111;
+}
+.layout.board-collapsed.outline-mode #panel::-webkit-scrollbar-thumb,
+.layout.board-collapsed.outline-mode #storyarea::-webkit-scrollbar-thumb,
+.layout.board-collapsed.outline-mode #outlineBox::-webkit-scrollbar-thumb {
+  background: #777;
+  border-radius: 999px;
+  border: 3px solid #111;
+}
+.layout.board-collapsed.outline-mode #panel::-webkit-scrollbar-thumb:hover,
+.layout.board-collapsed.outline-mode #storyarea::-webkit-scrollbar-thumb:hover,
+.layout.board-collapsed.outline-mode #outlineBox::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* 2026-07-05 修正：大綱後直接接三段式，只空一行，不使用分隔線 */
+.layout.board-collapsed.outline-mode #panel {
+  grid-template-columns: minmax(0, 1fr) clamp(66px, 5vw, 96px) !important;
+  column-gap: clamp(28px, 3vw, 54px) !important;
+}
+.layout.board-collapsed.outline-mode #panel::before {
+  display: none !important;
+  content: none !important;
+}
+.layout.board-collapsed.outline-mode #storyarea {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  overflow: auto !important;
+  white-space: pre-wrap !important;
+}
+.layout.board-collapsed.outline-mode #qnum {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+}
+
+/* 2026-07-05 修正：大綱內三段標籤改為黃底黑字 */
+.layout.board-collapsed.outline-mode #outlineBox .inline-stage-label {
+  display: inline-block !important;
+  background: #F3CF3F !important;
+  color: #000 !important;
+  border-radius: 8px !important;
+  padding: .3em .18em !important;
+  margin-bottom: .38em !important;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+  font-size: .92em !important;
+  line-height: 1.1 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,.35) !important;
+  box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+}
+
+/* 2026-07-05 依參考圖修正：左三段、中大綱、右黃底故事標題 */
+.layout.board-collapsed.outline-mode #panel {
+  display: grid !important;
+  grid-template-columns: minmax(420px, .42fr) minmax(620px, .58fr) clamp(72px, 5vw, 96px) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  column-gap: clamp(36px, 4vw, 72px) !important;
+  overflow: auto !important;
+}
+.layout.board-collapsed.outline-mode #panel::before {
+  display: none !important;
+  content: none !important;
+}
+.layout.board-collapsed.outline-mode #panelMain {
+  display: contents !important;
+}
+.layout.board-collapsed.outline-mode #medbtn,
+.layout.board-collapsed.outline-mode #placeholder {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #storyarea {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: row-reverse !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: clamp(30px, 3.5vw, 68px) !important;
+  width: 100% !important;
+  min-width: max-content !important;
+  height: 100% !important;
+  overflow: auto !important;
+  padding: 0 0 16px 0 !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage,
+.layout.board-collapsed.outline-mode #storyarea .stage:first-child,
+.layout.board-collapsed.outline-mode #storyarea .stage:not(:first-child),
+.layout.board-collapsed.outline-mode #storyarea .stage:last-child {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 7.8em !important;
+  height: 100% !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  color: #fff !important;
+  font-family: DFKai-SB, KaiTi, "標楷體", serif !important;
+  font-size: clamp(30px, 2.05vw, 46px) !important;
+  line-height: 1.38 !important;
+  letter-spacing: 0 !important;
+  font-weight: 900 !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  white-space: normal !important;
+  overflow: visible !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .stage > span:not(.tag) {
+  display: inline !important;
+  white-space: pre-wrap !important;
+}
+.layout.board-collapsed.outline-mode #storyarea .tag,
+.layout.board-collapsed.outline-mode #storyarea .tag.t1,
+.layout.board-collapsed.outline-mode #storyarea .tag.t2,
+.layout.board-collapsed.outline-mode #storyarea .tag.t3 {
+  display: inline-block !important;
+  background: #F3CF3F !important;
+  color: #000 !important;
+  border-radius: 8px !important;
+  padding: .28em .18em !important;
+  margin-bottom: .45em !important;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+  font-size: clamp(22px, 1.55vw, 34px) !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+  box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: block !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
+  width: 100% !important;
+  min-width: 620px !important;
+  max-width: none !important;
+  height: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  white-space: pre-wrap !important;
+  overflow: auto !important;
+  font-family: DFKai-SB, KaiTi, "標楷體", serif !important;
+  font-size: clamp(30px, 2vw, 45px) !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+  font-weight: 900 !important;
+}
+.layout.board-collapsed.outline-mode #qnum {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-self: start !important;
+  justify-self: end !important;
+  justify-content: center !important;
+  align-items: center !important;
+  flex: none !important;
+  width: clamp(64px, 4.8vw, 90px) !important;
+  min-width: clamp(64px, 4.8vw, 90px) !important;
+  height: auto !important;
+  max-height: calc(100% - 12px) !important;
+  padding: .34em .18em !important;
+  margin: 0 !important;
+  background: #F3CF3F !important;
+  border: 2px solid #1E88E5 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+  overflow: hidden !important;
+  z-index: 2 !important;
+}
+.layout.board-collapsed.outline-mode #qnum .qnum-value {
+  color: #000 !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+  font-size: clamp(30px, 2vw, 44px) !important;
+  line-height: 1.22 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+}
+
+/* 2026-07-05 微調：故事標題去藍邊，內文與標題距離縮短 */
+.layout.board-collapsed.outline-mode #panel {
+  grid-template-columns: minmax(420px, .43fr) minmax(620px, .57fr) clamp(72px, 5vw, 96px) !important;
+  column-gap: clamp(18px, 2.2vw, 38px) !important;
+}
+.layout.board-collapsed.outline-mode #qnum {
+  border: none !important;
+  box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox {
+  padding-left: clamp(4px, .8vw, 12px) !important;
+}
+
+/* 2026-07-05 新增：三位數密碼首頁 */
+body.locked-page {
+  overflow: hidden !important;
+}
+#passwordGate {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #171717 0%, #050505 70%);
+  color: #fff;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+}
+#passwordGate.hidden {
+  display: none !important;
+}
+.password-card {
+  width: min(90vw, 420px);
+  padding: 34px 30px 30px;
+  background: #111;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(0,0,0,.45);
+  text-align: center;
+}
+.password-title {
+  margin: 0 0 18px;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1.2;
+  font-weight: 900;
+  color: #F3CF3F;
+}
+.password-subtitle {
+  margin: 0 0 22px;
+  font-size: 18px;
+  color: rgba(255,255,255,.78);
+}
+.password-row {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+#passwordInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 58px;
+  border: 2px solid #F3CF3F;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font-size: 34px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: .25em;
+  padding: 0 8px 0 .25em;
+  font-family: inherit;
+}
+#passwordInput:focus {
+  outline: 3px solid rgba(243,207,63,.36);
+  outline-offset: 2px;
+}
+#passwordSubmit {
+  flex: 0 0 auto;
+  min-width: 92px;
+  border: none;
+  border-radius: 8px;
+  background: #F3CF3F;
+  color: #111;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+}
+#passwordSubmit:hover {
+  filter: brightness(1.06);
+}
+#passwordError {
+  min-height: 26px;
+  margin-top: 14px;
+  color: #ff6b75;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* 2026-07-05 更新：密碼首頁加入三張火柴人謎題圖 */
+.password-card {
+  width: min(94vw, 860px) !important;
+}
+.password-puzzle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(10px, 2vw, 18px);
+  margin: 0 0 22px;
+}
+.password-puzzle figure {
+  margin: 0;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  box-shadow: 0 10px 26px rgba(0,0,0,.24);
+}
+.password-puzzle img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@media (max-width: 680px) {
+  .password-card {
+    padding: 22px 18px 20px !important;
+  }
+  .password-puzzle {
+    gap: 8px;
+  }
+  .password-title {
+    font-size: 28px;
+  }
+  .password-row {
+    flex-direction: column;
+  }
+  #passwordSubmit {
+    height: 52px;
+  }
+}
+
+/* 2026-07-05 手機修正：縮小收合故事頁，保留橫向捲動並避免誤選文字 */
+.layout.board-collapsed.outline-mode #panel,
+.layout.board-collapsed.outline-mode #storyarea,
+.layout.board-collapsed.outline-mode #outlineBox,
+.layout.board-collapsed.outline-mode #qnum,
+.layout.board-collapsed.outline-mode #qnum .qnum-value,
+.layout.board-collapsed.outline-mode #storyarea .stage,
+.layout.board-collapsed.outline-mode #storyarea .stage > span,
+.layout.board-collapsed.outline-mode #outlineBox {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+@media (max-width: 900px) {
+  html, body {
+    overflow: auto !important;
+  }
+  .layout.board-collapsed.outline-mode {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .layout.board-collapsed.outline-mode #boardPanel {
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    min-width: 70px !important;
+  }
+  .layout.board-collapsed.outline-mode #panel {
+    flex: 0 0 auto !important;
+    width: max(980px, calc(100vw - 70px)) !important;
+    min-width: 980px !important;
+    max-width: none !important;
+    min-height: 74vh !important;
+    padding: 18px 16px 18px 22px !important;
+    grid-template-columns: 330px 520px 64px !important;
+    column-gap: 18px !important;
+    overflow: auto !important;
+  }
+  .layout.board-collapsed.outline-mode #storyarea {
+    gap: 28px !important;
+    min-width: 330px !important;
+    padding-bottom: 10px !important;
+  }
+  .layout.board-collapsed.outline-mode #storyarea .stage,
+  .layout.board-collapsed.outline-mode #storyarea .stage:first-child,
+  .layout.board-collapsed.outline-mode #storyarea .stage:not(:first-child),
+  .layout.board-collapsed.outline-mode #storyarea .stage:last-child {
+    font-size: clamp(24px, 5.6vw, 34px) !important;
+    line-height: 1.32 !important;
+    max-width: 6.6em !important;
+  }
+  .layout.board-collapsed.outline-mode #storyarea .tag,
+  .layout.board-collapsed.outline-mode #storyarea .tag.t1,
+  .layout.board-collapsed.outline-mode #storyarea .tag.t2,
+  .layout.board-collapsed.outline-mode #storyarea .tag.t3 {
+    font-size: clamp(20px, 4.6vw, 28px) !important;
+    padding: .25em .16em !important;
+    margin-bottom: .35em !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    min-width: 520px !important;
+    font-size: clamp(24px, 5.5vw, 34px) !important;
+    line-height: 1.34 !important;
+    padding: 0 !important;
+  }
+  .layout.board-collapsed.outline-mode #qnum {
+    width: 58px !important;
+    min-width: 58px !important;
+    padding: .28em .12em !important;
+    border-radius: 8px !important;
+  }
+  .layout.board-collapsed.outline-mode #qnum .qnum-value {
+    font-size: clamp(24px, 5.4vw, 34px) !important;
+    line-height: 1.16 !important;
+  }
+  #boardToggle,
+  #panelToggle {
+    width: 54px !important;
+    height: 54px !important;
+  }
+}
+@media (max-width: 560px) {
+  .layout.board-collapsed.outline-mode #panel {
+    width: 900px !important;
+    min-width: 900px !important;
+    grid-template-columns: 300px 480px 56px !important;
+    column-gap: 14px !important;
+  }
+  .layout.board-collapsed.outline-mode #storyarea {
+    min-width: 300px !important;
+    gap: 22px !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    min-width: 480px !important;
+  }
+}
+
+/* 2026-07-05 手機修正：故事大綱與三段式合併成單一欄，避免交疊 */
+@media (max-width: 900px) {
+  .layout.board-collapsed.outline-mode #panel {
+    width: max(760px, calc(100vw - 70px)) !important;
+    min-width: 760px !important;
+    grid-template-columns: minmax(640px, 1fr) 58px !important;
+    column-gap: 14px !important;
+  }
+  .layout.board-collapsed.outline-mode #storyarea {
+    display: none !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 640px !important;
+    width: 100% !important;
+    padding: 0 !important;
+    font-size: clamp(23px, 5.2vw, 32px) !important;
+    line-height: 1.34 !important;
+    overflow: auto !important;
+  }
+  .layout.board-collapsed.outline-mode #qnum {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox .inline-stage-label {
+    display: inline-block !important;
+    background: #F3CF3F !important;
+    color: #000 !important;
+    border-radius: 8px !important;
+    padding: .25em .16em !important;
+    margin-bottom: .36em !important;
+    font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+    font-size: .86em !important;
+    line-height: 1.12 !important;
+    font-weight: 900 !important;
+    box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+  }
+}
+@media (max-width: 560px) {
+  .layout.board-collapsed.outline-mode #panel {
+    width: 700px !important;
+    min-width: 700px !important;
+    grid-template-columns: 608px 54px !important;
+    column-gap: 12px !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    min-width: 608px !important;
+  }
+}
+
+/* 2026-07-05 統一：手機與桌機都使用單一內容欄位，避免直排欄位交疊 */
+.layout.board-collapsed.outline-mode #panel {
+  display: grid !important;
+  grid-template-columns: minmax(720px, 1fr) clamp(72px, 5vw, 96px) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  column-gap: clamp(18px, 2vw, 34px) !important;
+  overflow: auto !important;
+}
+.layout.board-collapsed.outline-mode #panel::before {
+  display: none !important;
+  content: none !important;
+}
+.layout.board-collapsed.outline-mode #panelMain {
+  display: contents !important;
+}
+.layout.board-collapsed.outline-mode #storyarea,
+.layout.board-collapsed.outline-mode #medbtn,
+.layout.board-collapsed.outline-mode #placeholder {
+  display: none !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 720px !important;
+  max-width: none !important;
+  height: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  writing-mode: vertical-rl !important;
+  text-orientation: mixed !important;
+  white-space: pre-wrap !important;
+  overflow: auto !important;
+  font-family: DFKai-SB, KaiTi, "標楷體", serif !important;
+  font-size: clamp(28px, 1.9vw, 43px) !important;
+  line-height: 1.42 !important;
+  letter-spacing: 0 !important;
+  font-weight: 900 !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+.layout.board-collapsed.outline-mode #outlineBox .inline-stage-label {
+  display: inline-block !important;
+  background: #F3CF3F !important;
+  color: #000 !important;
+  border-radius: 8px !important;
+  padding: .26em .16em !important;
+  margin-bottom: .36em !important;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif !important;
+  font-size: .86em !important;
+  line-height: 1.12 !important;
+  font-weight: 900 !important;
+  box-shadow: 0 2px 0 rgba(255,255,255,.24) inset, 0 4px 0 rgba(127,109,37,.65) !important;
+}
+.layout.board-collapsed.outline-mode #qnum {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  display: flex !important;
+  align-self: start !important;
+  justify-self: end !important;
+  width: clamp(64px, 4.8vw, 90px) !important;
+  min-width: clamp(64px, 4.8vw, 90px) !important;
+}
+@media (max-width: 900px) {
+  .layout.board-collapsed.outline-mode #panel {
+    width: max(760px, calc(100vw - 70px)) !important;
+    min-width: 760px !important;
+    grid-template-columns: minmax(640px, 1fr) 58px !important;
+    column-gap: 14px !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    min-width: 640px !important;
+    font-size: clamp(23px, 5.2vw, 32px) !important;
+    line-height: 1.34 !important;
+  }
+  .layout.board-collapsed.outline-mode #qnum {
+    width: 58px !important;
+    min-width: 58px !important;
+  }
+}
+@media (max-width: 560px) {
+  .layout.board-collapsed.outline-mode #panel {
+    width: 700px !important;
+    min-width: 700px !important;
+    grid-template-columns: 608px 54px !important;
+    column-gap: 12px !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    min-width: 608px !important;
+  }
+}
+
+/* 2026-07-05 手機修正：大綱模式改橫排、寬度貼合螢幕，文字自動換行，避免超出畫面 */
+@media (max-width: 900px) {
+  .layout.board-collapsed.outline-mode #panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) 56px !important;
+    column-gap: 12px !important;
+    overflow: hidden !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    min-width: 0 !important;
+    width: 100% !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: initial !important;
+    font-size: clamp(20px, 5vw, 30px) !important;
+    line-height: 1.55 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  .layout.board-collapsed.outline-mode #qnum {
+    width: 56px !important;
+    min-width: 56px !important;
+  }
+}
+@media (max-width: 560px) {
+  .layout.board-collapsed.outline-mode #panel {
+    grid-template-columns: minmax(0, 1fr) 50px !important;
+    column-gap: 10px !important;
+  }
+  .layout.board-collapsed.outline-mode #outlineBox {
+    font-size: clamp(19px, 5.4vw, 26px) !important;
+  }
+  .layout.board-collapsed.outline-mode #qnum {
+    width: 50px !important;
+    min-width: 50px !important;
+  }
+}
+/* 2026-07-05 新增：右側三段式故事欄（黑底）也使用捲軸，內容過長不被裁切 */
+#panelMain {
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  -webkit-overflow-scrolling: touch;
+}
+#storyarea {
+  width: 100% !important;
+  min-width: max-content !important;
+  height: 100% !important;
+  justify-content: space-between !important;
+  overflow: visible !important;
+}
+#storyarea .stage {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+#panelMain::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+#panelMain::-webkit-scrollbar-track {
+  background: #111;
+  border-radius: 8px;
+}
+#panelMain::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.42);
+  border-radius: 8px;
+  border: 3px solid #111;
+}
+#panelMain::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,.6);
+}
+</style>
+</head>
+<body class="locked-page">
+<a href="index.html" id="toGames" title="回遊戲目錄" aria-label="回遊戲目錄" style="position:fixed;bottom:14px;left:16px;z-index:2147483647;width:36px;height:36px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.92);color:#1e1c1a;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.18)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="18" r="1.2" fill="currentColor"/></svg></a>
+<script>document.getElementById('toGames').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();location.replace('index.html');});</script>
+
+<div id="passwordGate" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+  <form class="password-card" id="passwordForm" autocomplete="off">
+    <h2 class="password-title" id="passwordTitle">故事賓果</h2>
+    <p class="password-subtitle">觀察三張火柴人，輸入三位數密碼</p>
+    <div class="password-puzzle" aria-label="密碼謎題圖片">
+      <figure><img src="assets/stickman-1.png" alt="火柴人謎題圖一" /></figure>
+      <figure><img src="assets/stickman-4.png" alt="火柴人謎題圖二" /></figure>
+      <figure><img src="assets/stickman-6.png" alt="火柴人謎題圖三" /></figure>
+    </div>
+    <div class="password-row">
+      <input id="passwordInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="三位數密碼" />
+      <button id="passwordSubmit" type="submit">進入</button>
+    </div>
+    <div id="passwordError" aria-live="polite"></div>
+  </form>
+</div>
+<div class="wrap">
+  <div class="header">
+    <h1>故事賓果</h1>
+    <div class="subtitle">16 道人生求救題 × 16 帖故事藥方（童話・寓言・名人）</div>
+  </div>
+  <div id="status"></div>
+  <div class="layout">
+    <div id="boardPanel">
+      <button id="boardToggle" type="button" onclick="toggleBoard()" title="收合／展開題目板" aria-label="收合／展開題目板" aria-expanded="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><line x1="12" y1="5" x2="12" y2="19"></line></svg>
+      </button>
+      <div id="board"></div>
+    </div>
+    <div id="panel">
+      <div id="zoomSlot"><div id="zoomBox" aria-hidden="true"></div></div>
+      <div id="panelMain">
+        <div id="qnum"></div>
+        <button id="medbtn" onclick="toggleTale()"></button>
+        <div id="placeholder">請點擊左側題目</div>
+        <div id="storyarea">
+          <div class="stage"><span class="tag t1">原以為</span><span id="s1"></span></div>
+          <div class="stage"><span class="tag t2">沒想到</span><span id="s2"></span></div>
+          <div class="stage"><span class="tag t3">最　後</span><span id="s3"></span></div>
+        </div>
+      </div>
+      <div id="outlineBox" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="btnrow">
+    <button id="reset" onclick="resetGame()" title="重新開始" aria-label="重新開始">↻</button>
+  </div>
+  <button id="panelToggle" type="button" onclick="togglePanel()" title="收合／展開故事欄" aria-label="收合／展開故事欄">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="14" y1="4" x2="14" y2="20"></line></svg>
+  </button>
+  <button id="zoomReset" type="button" onclick="unlockZoom()">還原</button>
+</div>
+<script>
+const questions = [
+  "我好像什麼都做不好，怎麼辦？",
+  "認輸，是不是很丟臉？",
+  "我不知道自己喜歡什麼，怎麼辦？",
+  "穩定和夢想，該選哪一個？",
+  "大家都反對我的決定，我該堅持嗎？",
+  "現在轉行、重來，會不會太遲了？",
+  "選錯了怎麼辦？",
+  "為什麼我這個年紀了，還是不知道要做什麼？",
+  "我走不出來，怎麼辦？",
+  "為什麼是我？我做錯了什麼？",
+  "要怎麼原諒傷害過我的人？",
+  "難過的時候，可以哭嗎？男生也可以嗎？",
+  "我是不是想太多？",
+  "假裝沒事久了，會不會就真的沒事了？",
+  "爸媽根本不懂我，要怎麼跟他們溝通？",
+  "為什麼大人可以，小孩就不行？"
+];
+const stories = [
+  "被刷掉的喬丹",
+  "田忌賽馬",
+  "愛麗絲與柴郡貓",
+  "梵谷的畫筆",
+  "萊特兄弟的飛機",
+  "摩西奶奶的畫",
+  "便利貼的誕生",
+  "肯德基爺爺",
+  "海倫凱勒的水",
+  "尼克胡哲的擁抱",
+  "曼德拉走出監獄",
+  "費德勒的眼淚",
+  "達文西的筆記本",
+  "皇帝的新衣",
+  "尼莫與爸爸",
+  "小王子與大人"
+];
+const tales = [
+  ["他以為自己連校隊都進不了，就是沒有天分。","被刷掉後，他把難過變成每天更早、更久的練習。","後來大家記住的，不是落選的人，而是籃球之神。"],
+  ["田忌照原本配法賽馬，一定會輸。","孫臏讓他先輸一局，換來後面兩局的勝利。","認輸不是丟臉，有時是看清全局的策略。"],
+  ["愛麗絲站在岔路口，急著問哪條路才對。","柴郡貓問她想去哪裡，她卻答不出來。","不知道喜歡什麼時，先開始走，答案會在路上出現。"],
+  ["梵谷也曾想走安穩的路，卻一次次失敗。","他後來拿起畫筆，日子仍不穩，心卻有了方向。","夢想不是逃離現實，而是願意為某件事承擔。"],
+  ["大家笑萊特兄弟，覺得人不可能飛上天。","他們一次次試飛、摔壞、修正，還是沒有停下。","反對聲不一定代表你錯，有時只是別人還沒看見。"],
+  ["她年紀大了，手也不方便，像是只能放下新開始。","摩西奶奶七十多歲才認真畫畫，慢慢被世界看見。","重來不怕晚，怕的是你以為晚了就不能開始。"],
+  ["科學家原本想做強力膠，卻做出黏不牢的膠水。","同事換個角度，把失敗拿來做可撕下的書籤。","選錯不一定全毀，有時只是用途還沒被找到。"],
+  ["他到了退休年紀，仍不知道人生下一步在哪裡。","肯德基爺爺拿著炸雞配方到處被拒絕。","年紀不是答案的期限，人生也能很晚才開張。"],
+  ["海倫看不見、聽不見，像被困在黑暗裡。","老師安妮一次次陪她，把水這個字放進她心裡。","走不出來時，先抓住一個願意陪你的人和一個小出口。"],
+  ["尼克一出生就沒有四肢，曾以為自己是不是被世界放棄。","他慢慢學會生活，也把自己的痛講給別人聽。","不是你做錯什麼，有些痛不是懲罰，而是生命要你長出別種力量。"],
+  ["曼德拉被關進監獄二十七年，理由充滿不公平。","出獄後，他沒有把國家帶向報復，而是選擇和解。","原諒不是說傷害沒發生，而是不再讓傷害掌控自己。"],
+  ["有人以為男生和冠軍都應該永遠冷靜。","費德勒贏球會哭，輸球也會哭，情緒很真實。","眼淚不是軟弱，是心真的在乎，也是在釋放。"],
+  ["旁人看達文西，可能覺得他整天想東想西。","他把問題、觀察、設計全寫進筆記本。","想太多不一定壞，學會整理，它就會變成創造力。"],
+  ["全城的人都看見皇帝沒穿衣服，卻假裝沒事。","大家越裝越安靜，直到孩子說出真話。","假裝沒事不會讓破洞消失，只會讓真話更難出口。"],
+  ["尼莫覺得爸爸只會管他，爸爸也覺得孩子太不懂危險。","分開後，他們才看見彼此心裡其實都是害怕和愛。","溝通不是誰贏，而是把責備翻譯成真正的擔心。"],
+  ["小王子遇見許多大人，發現他們常把規矩看得比心重要。","他沒有只是抱怨，而是繼續用自己的眼睛理解世界。","大人可以不代表一定對，小孩不行也不代表沒有道理。"]
+];
+
+const outlines = [
+  "喬丹年輕時曾因表現不夠好，連高中校隊都沒選上。那次被淘汰讓他非常難過，回家後甚至哭了出來。\n但他沒有因此放棄，反而把挫敗變成訓練的力量，天天更早到球場、練得更久、更專注。\n後來，那個曾經被刷掉的男孩，成了籃球之神。這個故事告訴我們，覺得自己什麼都做不好，不一定表示你沒有天分，而是你還在一段需要累積、需要打磨的路上。",
+  "田忌與齊王賽馬，照原本的配法一定會輸。\n孫臏卻建議他故意用下等馬去對齊王的上等馬，先輸掉第一局，再用上等馬去贏中等馬，用中等馬去贏下等馬，最後反而拿下整場勝利。\n這個故事提醒我們，認輸不一定是丟臉，有時它只是策略的一部分。真正重要的不是每一局都要贏，而是你有沒有看清全局，知道什麼時候該退一步，換來最後的勝利。",
+  "愛麗絲走到岔路口，不知道該往哪裡去，於是問柴郡貓哪條路才對。貓反問她想去什麼地方，愛麗絲說自己其實也不知道。\n貓便回答，如果你不知道要去哪裡，那麼走哪一條路其實都差不多。\n這句話讓愛麗絲明白，真正困住人的，常常不是選項太多，而是不知道自己想成為什麼樣的人。當你不知道喜歡什麼時，與其一直停著，不如先開始走，答案會在路上慢慢出現。",
+  "梵谷曾經做過畫商、教師、傳教士，卻在許多穩定道路上走得跌跌撞撞。後來他選擇畫畫，生活並沒有立刻變好，甚至常常貧窮、孤單、不被理解。\n可是他仍把心裡看見的星空、麥田與人，努力畫下來。\n這個故事不是叫人不顧現實，而是提醒我們，穩定和夢想不一定只是二選一。真正的夢想不是逃走，而是你願意慢慢把它變成能承擔的生活。",
+  "萊特兄弟想讓人類飛上天空時，許多人覺得那只是荒唐的幻想。當時沒有豪華實驗室，也沒有很多人相信他們。\n他們一邊修腳踏車，一邊研究風、翅膀和引擎，一次又一次試飛、失敗、摔壞、修正。\n最後，飛機真的離開地面。這個故事提醒我們，大家反對不一定表示你錯，也可能只是他們還沒看見你看見的畫面。但堅持不是硬撐，而是願意用行動證明。",
+  "摩西奶奶年輕時忙著工作、結婚、照顧家庭，畫畫一直不是她人生的主角。年紀大了以後，她因為手指不方便，不能再做原本喜歡的刺繡，才開始認真畫畫。\n她已經七十多歲，卻一筆一筆畫出鄉村生活，後來成為美國知名畫家。\n這個故事告訴我們，轉行、重來，不一定有標準年齡。太遲常常不是時間說的，而是恐懼說的。只要還能開始，就還有新的路。",
+  "有位科學家原本想發明強力膠，結果卻做出一種黏性不夠強、一下就能撕下來的膠水，看起來像是一次徹底失敗。\n可是另一位同事忽然想到，這種膠正好可以用來做書籤，貼上去不會掉，撕下來也不傷紙。\n後來，這個失敗的發明竟變成全世界都在用的便利貼。人生的選擇也是如此，走錯了、做歪了，不一定全盤作廢，有時只是還沒找到它真正該去的地方。",
+  "桑德斯上校，也就是後來的肯德基爺爺，年輕時換過許多工作，當過農場工人、售票員、加油站經營者，也經歷過不少失敗。\n到了很多人準備退休的年紀，他仍帶著炸雞配方四處拜訪餐廳，被拒絕很多次後，才慢慢找到機會。\n這個故事提醒我們，不知道要做什麼不代表你的人生落後。有些人的方向很早出現，有些人則是在走過很多彎路後，才把經驗煮成自己的味道。",
+  "海倫凱勒小時候因病失去視力與聽力，像被困在沒有聲音也沒有光的世界裡。她急躁、憤怒，也說不出心裡的需要。\n老師安妮來到她身邊，一次次陪她練習，直到有一天在水流旁，海倫突然明白手心裡的符號代表水。\n從那一刻開始，世界慢慢打開。這個故事告訴我們，走不出來時，不一定要立刻走很遠。先抓住一個字、一個人、一個小出口，光就可能慢慢進來。",
+  "尼克胡哲一出生就沒有四肢，從小面對許多不方便，也曾深深懷疑為什麼是自己，甚至覺得生命沒有希望。\n可是後來，他慢慢學會用自己的方式生活，也開始到世界各地演講，把痛苦、掙扎與勇氣分享給別人。\n這個故事不是說痛苦很好，而是說痛苦不等於你做錯了什麼。有些遭遇沒有簡單答案，但人仍可能在破碎之處長出力量，甚至成為別人的安慰。",
+  "曼德拉因反對種族隔離制度，被關進監獄二十七年。那是一段漫長而不公平的歲月，他失去自由，也錯過許多人生時刻。\n可是當他終於走出監獄，後來成為南非總統時，他沒有把國家推向報復，而是努力推動和解。\n這個故事提醒我們，原諒不是替傷害找藉口，也不是說事情沒有發生。原諒更像是把自己的心從仇恨裡慢慢拿回來，不再讓傷害你的人繼續控制你的人生。",
+  "費德勒在球場上不只輸球會哭，贏球時也常激動落淚。\n有人以為男生、冠軍、世界級選手就該永遠堅強冷靜，但他卻讓大家看見，真正成熟的人不是沒有情緒，而是願意真實面對情緒。\n他的眼淚沒有讓人看不起他，反而讓更多人感受到他的真誠與投入。這個故事提醒我們，難過時可以哭，男生也可以哭；眼淚不是軟弱，而是一種誠實，也是一種釋放。",
+  "達文西總是對世界充滿好奇，腦中不停冒出各種問題與想像，於是他把那些念頭、觀察與設計，全都一筆一筆寫進筆記本裡。\n旁人看來，那像是愛胡思亂想、想太多；可多年之後，人們才發現，那些密密麻麻的筆記竟保存了他驚人的創造力，也讓後世一直研究不完。\n這個故事告訴我們，想得多未必是壞事，關鍵不是把念頭壓下去，而是學會整理它、使用它，讓想法變成作品。",
+  "皇帝的新衣裡，騙子說只有聰明人才看得見那件衣服。大臣們明明什麼都沒看見，卻害怕被說愚笨，只好假裝看見。\n遊行時，城裡的人也跟著假裝，直到一個孩子說出真話，皇帝根本沒有穿衣服。\n這個故事提醒我們，假裝沒事不會讓事情真的沒事，只會讓心裡的真相越來越難說出口。難過、受傷、害怕，都需要被看見，而不是被一層又一層的沒事蓋住。",
+  "尼莫覺得爸爸馬林太愛管他，什麼都不讓他試；馬林則覺得外面的世界太危險，孩子根本不懂。父子吵架後，尼莫被帶離家，馬林展開一段漫長的尋找。\n在旅途中，爸爸學會放手，尼莫也看見爸爸的擔心其實來自愛。\n這個故事提醒我們，爸媽不懂你時，背後常藏著他們的害怕；你覺得被控制時，心裡也有想被信任的需要。溝通不是吵贏，而是把責備翻成真正的感受。",
+  "小王子旅行時遇見許多大人，有人只在乎權力，有人只在乎數字，有人忙著證明自己重要。小王子不懂，為什麼大人總把規矩、面子和所有權看得那麼重。\n可是他沒有只是生氣，而是繼續觀察、提問，用自己的眼睛理解世界。\n這個故事提醒我們，大人可以做，不代表一定比較有道理；小孩不可以做，也不代表你的想法沒有價值。真正重要的是你能不能說出原因，也學會承擔選擇的後果。"
+];
+const BOARD_SIZE = 4;
+const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
+const lines = [];
+for (let r = 0; r < BOARD_SIZE; r++) {
+  const row = [];
+  for (let c = 0; c < BOARD_SIZE; c++) row.push(r * BOARD_SIZE + c);
+  lines.push(row);
+}
+for (let c = 0; c < BOARD_SIZE; c++) {
+  const col = [];
+  for (let r = 0; r < BOARD_SIZE; r++) col.push(r * BOARD_SIZE + c);
+  lines.push(col);
+}
+lines.push([0, 5, 10, 15]);
+lines.push([3, 6, 9, 12]);
+
+let lit = Array(CELL_COUNT).fill(false);
+let over = false;
+let winCells = null;
+let shownQ = -1;
+let selectedQ = -1;
+const board = document.getElementById('board');
+const status = document.getElementById('status');
+const qnum = document.getElementById('qnum');
+const medbtn = document.getElementById('medbtn');
+const placeholder = document.getElementById('placeholder');
+const storyarea = document.getElementById('storyarea');
+const s1 = document.getElementById('s1');
+const s2 = document.getElementById('s2');
+const s3 = document.getElementById('s3');
+
+function showStory(i) {
+  shownQ = i;
+  selectedQ = i;
+  qnum.innerHTML = '<span class="qnum-value">' + stories[i] + '</span>';
+  qnum.style.display = 'flex';
+  qnum.onclick = null;
+  medbtn.textContent = '';
+  medbtn.style.display = 'none';
+  s1.textContent = tales[i][0];
+  s2.textContent = tales[i][1];
+  s3.textContent = tales[i][2];
+  placeholder.style.display = 'none';
+  storyarea.style.display = 'flex';
+  if (layoutEl.classList.contains('board-collapsed')) {
+    showOutlineInStoryColumns(i);
+  }
+}
+
+function toggleTale() {
+  if (shownQ === -1) return;
+  const opened = s1.textContent || s2.textContent || s3.textContent;
+  if (opened) {
+    s1.textContent = '';
+    s2.textContent = '';
+    s3.textContent = '';
+    qnum.innerHTML = '<span class="qnum-value"></span>';
+    qnum.style.display = 'none';
+    storyarea.style.display = 'none';
+  } else {
+    qnum.innerHTML = '<span class="qnum-value">' + stories[shownQ] + '</span>';
+    qnum.style.display = 'flex';
+    s1.textContent = tales[shownQ][0];
+    s2.textContent = tales[shownQ][1];
+    s3.textContent = tales[shownQ][2];
+    storyarea.style.display = 'flex';
+  }
+}
+
+function hideStory() {
+  shownQ = -1;
+  selectedQ = -1;
+  qnum.innerHTML = '<span class="qnum-value"></span>';
+  qnum.style.display = 'none';
+  qnum.onclick = null;
+  medbtn.style.display = 'none';
+  s1.textContent = '';
+  s2.textContent = '';
+  s3.textContent = '';
+  storyarea.style.display = 'none';
+  placeholder.style.display = 'none';
+}
+
+function resetGame() {
+  lit = Array(CELL_COUNT).fill(false);
+  over = false;
+  winCells = null;
+  status.textContent = ''; // 已隱藏狀態列
+  status.className = '';
+  unlockZoom();
+  hideStory();
+  render();
+}
+
+let zoomLocked = -1;
+const zoomBox = document.getElementById('zoomBox');
+const zoomReset = document.getElementById('zoomReset');
+
+function showZoom(i, cell, locked) {
+  if (!cell) cell = board.children[i];
+  if (!cell) return;
+  zoomBox.style.removeProperty('display');
+  zoomBox.innerHTML = '<span class="zoom-num">' + (i + 1) + '</span><span class="zoom-q">' + questions[i] + '</span>';
+  zoomBox.classList.toggle('locked', !!locked);
+  board.classList.remove('locked-view');
+  if (locked) board.classList.add('locked-view');
+  Array.from(board.children).forEach(function(c) { c.classList.remove('zoom-source'); });
+  cell.classList.add('zoom-source');
+  if (locked) {
+    zoomLocked = i;
+  }
+}
+
+function hideZoom() {
+  if (zoomLocked !== -1) return;
+  zoomBox.style.display = 'none';
+  zoomBox.classList.remove('locked');
+  board.classList.remove('zooming');
+  board.classList.remove('locked-view');
+  board.classList.remove('dim-active');
+  Array.from(board.children).forEach(function(c) { c.classList.remove('zoom-source'); c.classList.remove('hovering'); });
+}
+
+function unlockZoom() {
+  zoomLocked = -1;
+  zoomBox.style.display = 'none';
+  zoomBox.classList.remove('locked');
+  board.classList.remove('zooming');
+  board.classList.remove('locked-view');
+  board.classList.remove('dim-active');
+  Array.from(board.children).forEach(function(c) { c.classList.remove('zoom-source'); c.classList.remove('hovering'); });
+}
+
+function render() {
+  board.innerHTML = '';
+  for (let i = 0; i < CELL_COUNT; i++) {
+    const cell = document.createElement('button');
+    cell.className = 'cell' +
+      (winCells && winCells.includes(i) ? ' win' : lit[i] ? ' lit' : '') +
+      (selectedQ === i ? ' selected' : '') +
+      (zoomLocked === i ? ' zoom-source' : '');
+    cell.setAttribute('aria-label', '第 ' + (i + 1) + ' 題：' + questions[i]);
+    const num = document.createElement('span');
+    num.className = 'num';
+    num.textContent = i + 1;
+    cell.appendChild(num);
+    const q = document.createElement('span');
+    q.className = 'q';
+    q.textContent = questions[i];
+    cell.appendChild(q);
+    cell.onmouseenter = function() {
+      board.classList.add('dim-active');
+      Array.from(board.children).forEach(function(c) { c.classList.remove('hovering'); });
+      cell.classList.add('hovering');
+      showZoom(i, cell, false);
+    };
+    cell.onmouseleave = function() {
+      cell.classList.remove('hovering');
+      if (!board.querySelector('.cell.hovering')) {
+        board.classList.remove('dim-active');
+        if (zoomLocked !== -1) {
+          const lockedCell = board.children[zoomLocked];
+          if (lockedCell) showZoom(zoomLocked, lockedCell, true);
+        } else {
+          hideZoom();
+        }
+      }
+    };
+    cell.onclick = function() { tap(i); };
+    board.appendChild(cell);
+  }
+  if (zoomLocked !== -1) {
+    const lockedCell = board.children[zoomLocked];
+    if (lockedCell) showZoom(zoomLocked, lockedCell, true);
+  }
+}
+
+function tap(i) {
+  if (lit[i] && selectedQ === i && !over) {
+    lit[i] = false;
+    hideStory();
+    unlockZoom();
+    render();
+    return;
+  }
+  lit[i] = true;
+  showStory(i);
+  if (!winCells) {
+    const win = lines.find(function(l) { return l.every(function(idx) { return lit[idx]; }); });
+    if (win) {
+      over = true;
+      winCells = win;
+      status.textContent = '';
+      status.className = 'win';
+    }
+  }
+  zoomLocked = i;
+  if (layoutEl && layoutEl.classList.contains('board-collapsed')) updateOutlineBox();
+  board.classList.add('locked-view');
+  render();
+}
+
+function syncZoomSlotAspect() {
+  const slot = document.getElementById('zoomSlot');
+  const firstCell = board && board.children && board.children[0];
+  if (!slot || !firstCell) return;
+  const rect = firstCell.getBoundingClientRect();
+  const panel = document.getElementById('panel');
+  const panelRect = panel ? panel.getBoundingClientRect() : slot.getBoundingClientRect();
+  const panelStyle = panel ? getComputedStyle(panel) : null;
+  const panelPadding = panelStyle ? parseFloat(panelStyle.paddingLeft) + parseFloat(panelStyle.paddingRight) : 0;
+  const fullSlotWidth = Math.max(0, panelRect.width - panelPadding);
+  if (!rect.width || !rect.height || !fullSlotWidth) return;
+  const aspect = rect.width / rect.height;
+  const height = (fullSlotWidth / aspect) / 3.15;
+  slot.style.setProperty('--cell-aspect', aspect.toFixed(4));
+  slot.style.setProperty('--right-question-height', height.toFixed(1) + 'px');
+}
+
+const originalRenderForAspect = render;
+render = function() {
+  originalRenderForAspect();
+  setTimeout(syncZoomSlotAspect, 0);
+};
+window.addEventListener('resize', function() { setTimeout(syncZoomSlotAspect, 0); });
+
+const panelToggle = document.getElementById('panelToggle');
+const boardToggle = document.getElementById('boardToggle');
+const layoutEl = document.querySelector('.layout');
+const outlineBox = document.getElementById('outlineBox');
+function currentOutlineIndex() {
+  if (selectedQ >= 0) return selectedQ;
+  if (shownQ >= 0) return shownQ;
+  if (zoomLocked >= 0) return zoomLocked;
+  return 0;
+}
+function escapeOutlineHtml(text) {
+  return String(text || '').replace(/[&<>"']/g, function(ch) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+  });
+}
+function outlineLabel(text) {
+  return '<span class="inline-stage-label">' + escapeOutlineHtml(text) + '</span>';
+}
+function updateOutlineBox() {
+  if (!outlineBox) return;
+  const idx = currentOutlineIndex();
+  const outlineText = outlines[idx] || '';
+  if (layoutEl && layoutEl.classList.contains('outline-mode') && tales[idx]) {
+    outlineBox.innerHTML = escapeOutlineHtml(outlineText) + '\n\n' +
+      outlineLabel('原以為') + '\n' + escapeOutlineHtml(tales[idx][0]) + '\n\n' +
+      outlineLabel('沒想到') + '\n' + escapeOutlineHtml(tales[idx][1]) + '\n\n' +
+      outlineLabel('最後') + '\n' + escapeOutlineHtml(tales[idx][2]);
+  } else {
+    outlineBox.textContent = outlineText;
+  }
+}
+function togglePanel() {
+  const collapsed = layoutEl.classList.toggle('panel-collapsed');
+  panelToggle.classList.toggle('active', collapsed);
+  panelToggle.setAttribute('aria-expanded', String(!collapsed));
+  setTimeout(syncZoomSlotAspect, 220);
+}
+function toggleBoard() {
+  const collapsed = layoutEl.classList.toggle('board-collapsed');
+  if (collapsed) updateOutlineBox();
+  boardToggle.classList.toggle('active', collapsed);
+  boardToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (collapsed) {
+    board.classList.remove('dim-active');
+    Array.from(board.children).forEach(function(c) { c.classList.remove('hovering'); });
+  }
+  setTimeout(syncZoomSlotAspect, 220);
+}
+
+zoomBox.onclick = function(e) {
+  e.stopPropagation();
+  if (shownQ !== -1 && zoomLocked === shownQ) {
+    toggleTale();
+  }
+};
+updateOutlineBox();
+hideStory();
+render();
+
+
+// 2026-07-05 修改：右側欄 hover 時，左側表格全部變淡
+panel.addEventListener('mouseenter', function() {
+  layoutEl.classList.add('panel-hover');
+});
+panel.addEventListener('mouseleave', function() {
+  layoutEl.classList.remove('panel-hover');
+});
+
+
+// 2026-07-05 修改：取消右上題目欄互動，改為點左側題目直接顯示故事
+let currentZoomIndex = -1;
+const originalShowZoomForClickReveal = showZoom;
+showZoom = function(i, cell, locked) {
+  currentZoomIndex = i;
+  originalShowZoomForClickReveal(i, cell, locked);
+};
+
+function hideRightStoryContentOnly() {
+  qnum.innerHTML = '<span class="qnum-value"></span>';
+  qnum.style.display = 'none';
+  s1.textContent = '';
+  s2.textContent = '';
+  s3.textContent = '';
+  storyarea.style.display = 'none';
+  placeholder.style.display = 'none';
+}
+
+function revealStoryFromTopQuestion() {
+  return;
+}
+
+
+// 2026-07-05 修改：左側收合後，把故事改成對應題目的約兩百字故事大綱
+function showOutlineInStoryColumns(idx) {
+  const useIdx = (typeof idx === 'number' && idx >= 0) ? idx : currentOutlineIndex();
+  layoutEl.classList.add('outline-mode');
+  shownQ = useIdx;
+  selectedQ = useIdx;
+  qnum.innerHTML = '<span class="qnum-value">' + stories[useIdx] + '</span>';
+  qnum.style.display = 'flex';
+  updateOutlineBox();
+  s1.textContent = tales[useIdx][0];
+  s2.textContent = tales[useIdx][1];
+  s3.textContent = tales[useIdx][2];
+  storyarea.style.display = 'flex';
+  placeholder.style.display = 'none';
+}
+
+const originalToggleBoardForOutlineColumns = toggleBoard;
+toggleBoard = function() {
+  originalToggleBoardForOutlineColumns();
+  if (layoutEl.classList.contains('board-collapsed')) {
+    showOutlineInStoryColumns(currentOutlineIndex());
+  } else {
+    layoutEl.classList.remove('outline-mode');
+    hideRightStoryContentOnly();
+  }
+};
+
+
+// 2026-07-05 修改：初始畫面顯示十六格內容，並新增一鍵復原
+function restoreInitialScreen() {
+  lit = Array(CELL_COUNT).fill(false);
+  over = false;
+  winCells = null;
+  shownQ = -1;
+  selectedQ = -1;
+  zoomLocked = -1;
+  currentZoomIndex = -1;
+
+  layoutEl.classList.remove('board-collapsed', 'panel-collapsed', 'outline-mode', 'panel-hover', 'left-board-hover');
+  if (boardToggle) {
+    boardToggle.classList.remove('active');
+    boardToggle.setAttribute('aria-expanded', 'true');
+  }
+  if (panelToggle) {
+    panelToggle.classList.remove('active');
+    panelToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  status.textContent = '';
+  status.className = '';
+  qnum.innerHTML = '<span class="qnum-value"></span>';
+  qnum.style.display = 'none';
+  medbtn.style.display = 'none';
+  placeholder.style.display = 'none';
+  s1.textContent = '';
+  s2.textContent = '';
+  s3.textContent = '';
+  storyarea.style.display = 'none';
+  zoomBox.style.display = 'none';
+  zoomBox.classList.remove('locked');
+  board.classList.remove('zooming', 'locked-view', 'dim-active');
+  render();
+  setTimeout(syncZoomSlotAspect, 0);
+}
+
+const oldResetGameForRestore = resetGame;
+resetGame = restoreInitialScreen;
+
+restoreInitialScreen();
+
+</script>
+<script>
+(function() {
+  const gate = document.getElementById('passwordGate');
+  const form = document.getElementById('passwordForm');
+  const input = document.getElementById('passwordInput');
+  const error = document.getElementById('passwordError');
+  if (!gate || !form || !input) return;
+  function unlockPage() {
+    gate.classList.add('hidden');
+    document.body.classList.remove('locked-page');
+  }
+  input.addEventListener('input', function() {
+    input.value = input.value.replace(/\D/g, '').slice(0, 3);
+    if (error) error.textContent = '';
+  });
+  form.addEventListener('submit', function(event) {
+    event.preventDefault();
+    if (input.value === '146') {
+      unlockPage();
+      return;
+    }
+    if (error) error.textContent = '密碼錯誤，請重新輸入';
+    input.value = '';
+    input.focus();
+  });
+  setTimeout(function() { input.focus(); }, 80);
+})();
+</script>
+<style id="mobile-202611">
+/* 2026-11-04 手機版：題目板往下讓出左上／右上按鈕的位置 */
+@media (max-width:700px) and (orientation:portrait){ .layout{padding-top:52px!important} #boardToggle{top:-46px!important;left:52px!important;width:36px!important;height:36px!important} #panelToggle{width:36px!important;height:36px!important} }
+</style>
+<script>/* 手機直式：點題目後自動捲到故事欄 */
+document.getElementById('board').addEventListener('click',function(){
+  if(innerWidth>700||innerHeight<innerWidth)return;
+  setTimeout(function(){var p=document.getElementById('panel');var r=p.getBoundingClientRect();
+    if(r.top>innerHeight*0.5)p.scrollIntoView({behavior:'smooth',block:'start'});},200);
+});</script>
+<script src="game-bar.js?v=2"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
