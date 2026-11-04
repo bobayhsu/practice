@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>即刻練習｜聽得懂，記得住，傳得出去</title>
   <style>
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     :root { --ink: #12323e; --coral: #e85b4d; --cream: #fffaf0; --gold: #f5bd4f; --mint: #d9eee5; }
     * { box-sizing: border-box; }
     body { margin: 0; min-width: 320px; background: var(--cream); color: var(--ink); font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
@@ -80,7 +81,7 @@
     <section class="card" aria-labelledby="title">
       <header class="intro">
         <p class="eyebrow">即刻練習</p>
-        <h1 id="title">聽得懂，記得住，傳得出去</h1>
+        <h1 id="title" data-fit>聽得懂，記得住，傳得出去</h1>
         <p class="formula">靶心人公式：目標→阻礙→努力→結果→意外→轉彎→結局</p>
       </header>
 
@@ -278,6 +279,26 @@
     });
 
     setToggle(false); setMusicButton(false); updateFs(); render();
-  </script>
+  
+    /* 手機系統字型放大時，把文字縮回原本比例，並讓長標題縮到一行放得下 */
+    (function () {
+      const fix = () => {
+        const p = document.createElement('span'); p.textContent = '靶靶靶靶靶';
+        p.style.cssText = 'position:absolute;left:-9999px;top:0;font:400 100px/1 sans-serif;white-space:nowrap;letter-spacing:0';
+        document.body.appendChild(p); const f = p.getBoundingClientRect().width / 500, k = parseFloat(getComputedStyle(p).fontSize) / 100; p.remove();
+        if (f > 1.04 || f < .96) document.querySelectorAll('body *').forEach(e => {
+          const cs = parseFloat(getComputedStyle(e).fontSize); if (!cs) return;
+          e.dataset.fz0 = e.dataset.fz0 || cs; e.style.setProperty('font-size', (e.dataset.fz0 / k / f).toFixed(2) + 'px', 'important');
+        });
+        document.querySelectorAll('[data-fit]').forEach(h => {
+          h.style.removeProperty('font-size'); let s = parseFloat(getComputedStyle(h).fontSize), n = 0;
+          while (h.scrollWidth > h.clientWidth + 1 && s > 12 && n++ < 60) { s -= 1; h.style.setProperty('font-size', s + 'px', 'important'); }
+        });
+      };
+      const run = () => { try { fix(); } catch (_) {} };
+      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(run);
+      let to; addEventListener('resize', () => { clearTimeout(to); to = setTimeout(run, 200); });
+    })();
+</script>
 </body>
 </html>
