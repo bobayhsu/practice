@@ -2797,6 +2797,17 @@ restoreInitialScreen();
   setTimeout(function() { input.focus(); }, 80);
 })();
 </script>
+<style id="mobile-202611">
+/* 2026-11-04 手機版：題目板往下讓出左上／右上按鈕的位置 */
+@media (max-width:700px) and (orientation:portrait){ .layout{padding-top:52px!important} #boardToggle{top:-46px!important;left:52px!important;width:36px!important;height:36px!important} #panelToggle{width:36px!important;height:36px!important} }
+</style>
+<script>/* 手機直式：點題目後自動捲到故事欄 */
+document.getElementById('board').addEventListener('click',function(){
+  if(innerWidth>700||innerHeight<innerWidth)return;
+  setTimeout(function(){var p=document.getElementById('panel');var r=p.getBoundingClientRect();
+    if(r.top>innerHeight*0.5)p.scrollIntoView({behavior:'smooth',block:'start'});},200);
+});</script>
+<script src="game-bar.js?v=1"></script>
 </body>
 </html>
 
