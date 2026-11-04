@@ -54,7 +54,6 @@
   </style>
 </head>
 <body>
-  <button class="exit" id="exit" type="button" title="離開練習目錄">離開練習 ✕</button>
   <div class="toast" id="toast" role="status" hidden>請直接關閉這個分頁，回到簡報</div>
   <main>
     <header class="intro">
@@ -127,7 +126,7 @@
     document.getElementById('count').textContent = `共 ${PRACTICES.length} 個練習`;
     /* 離開練習目錄：有上一頁就回上一頁（回到簡報）；沒有就關閉分頁；瀏覽器不允許時，若有設定 EXIT_URL 就前往該網址，否則提示手動關閉 */
     const EXIT_URL = '';
-    document.getElementById('exit').addEventListener('click', () => {
+    document.getElementById('exit')?.addEventListener('click', () => {
       if (history.length > 1) { history.back(); return; }
       try { window.close(); } catch (_) {}
       setTimeout(() => {
