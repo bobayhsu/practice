@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>即刻練習｜練習目錄</title>
+  <style>
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    :root { --ink: #12323e; --coral: #e85b4d; --cream: #fffaf0; --gold: #f5bd4f; --mint: #d9eee5; --paper: #f7f4ed; --muted: #567078; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--cream); color: var(--ink); font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+    main { width: min(1180px, 100%); margin: 0 auto; padding: 72px 16px 64px; }
+
+    .intro { position: relative; padding: clamp(28px, 5vw, 56px); background: #fff; border: 3px solid var(--ink); box-shadow: 12px 12px 0 var(--gold); overflow: hidden; }
+    .intro::before { content: ""; position: absolute; top: -100px; right: -82px; width: 250px; height: 250px; border-radius: 50%; background: var(--mint); }
+    .intro > * { position: relative; }
+    .eyebrow { margin: 0 0 12px; font-weight: 800; font-size: clamp(15px, 2vw, 20px); letter-spacing: .18em; color: var(--coral); }
+    h1 { margin: 0; font-size: clamp(30px, 5vw, 58px); line-height: 1.2; letter-spacing: .03em; }
+    .formula { margin: 14px 0 0; font-size: clamp(14px, 2vw, 24px); font-weight: 800; line-height: 1.45; color: var(--coral); }
+
+    .bar { margin: clamp(32px, 5vw, 52px) 0 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .bar h2 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+    .count { font-weight: 800; color: var(--muted); }
+
+    .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 26px; }
+    .item { display: flex; }
+    .tile { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 26px 26px 22px; background: #fff; border: 3px solid var(--ink); box-shadow: 8px 8px 0 var(--ink); color: inherit; text-decoration: none; transition: transform .15s, box-shadow .15s; }
+    a.tile:hover, a.tile:focus-visible { transform: translate(-3px, -3px); box-shadow: 11px 11px 0 var(--coral); outline: 0; }
+    .top { display: flex; align-items: center; gap: 12px; }
+    .no { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; font-size: 20px; font-weight: 800; }
+    .tile h3 { margin: 0; font-size: clamp(20px, 2.4vw, 25px); line-height: 1.3; }
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { padding: 4px 12px; border-radius: 999px; background: var(--mint); font-size: 14px; font-weight: 800; }
+    .tag.time { background: var(--gold); }
+    .tile ol { margin: 0; padding-left: 1.4em; display: grid; gap: 6px; font-size: 16px; line-height: 1.5; font-weight: 700; color: #2c4a55; }
+    .go { margin-top: auto; padding-top: 6px; font-weight: 800; color: var(--coral); font-size: 17px; }
+
+    .tile.soon { border-style: dashed; box-shadow: none; background: var(--paper); color: var(--muted); align-items: center; justify-content: center; text-align: center; min-height: 260px; }
+    .tile.soon .no { background: transparent; border: 3px dashed var(--muted); color: var(--muted); }
+
+    @media (max-width: 680px) { .intro { box-shadow: 7px 7px 0 var(--gold); } .tile { box-shadow: 6px 6px 0 var(--ink); } }
+    @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+    .contest { margin-top: clamp(32px, 5vw, 52px); padding: clamp(24px, 4vw, 44px); background: #fff; border: 3px solid var(--ink); box-shadow: 10px 10px 0 var(--coral); }
+    .contest .eyebrow { margin-bottom: 10px; }
+    .contest h2 { margin: 0; white-space: nowrap; font-size: clamp(18px, 5.4vw, 50px); line-height: 1.25; letter-spacing: .04em; }
+    .contest h2 i { font-style: normal; color: var(--coral); margin: 0 .2em; }
+    .contest img { display: block; width: 100%; max-width: 940px; height: auto; margin: clamp(18px, 3vw, 30px) auto 0; }
+    @media (max-width: 680px) { .contest { box-shadow: 6px 6px 0 var(--coral); } }
+    .exit { position: fixed; top: 14px; right: 16px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); font: 800 15px "Microsoft JhengHei", "Noto Sans TC", sans-serif; cursor: pointer; box-shadow: 3px 3px 0 var(--gold); }
+    .exit:hover, .exit:focus-visible { background: var(--gold); outline: 0; }
+    .toast { position: fixed; left: 50%; bottom: 24px; z-index: 11; transform: translateX(-50%); padding: 12px 20px; background: var(--ink); color: #fff; font-weight: 800; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+    .toast[hidden] { display: none; }
+    @media (max-width: 680px) { main { padding-top: 70px; } }
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast" role="status" hidden>請直接關閉這個分頁，回到簡報</div>
+  <main>
+    <header class="intro">
+      <p class="eyebrow">即刻練習</p>
+      <h1>練習目錄</h1>
+      <p class="formula">靶心人公式：目標→阻礙→努力→結果→意外→轉彎→結局</p>
+    </header>
+
+    
+
+    <div class="bar">
+      <h2>選一個練習開始</h2>
+      <span class="count" id="count"></span>
+    </div>
+    <ul class="grid" id="grid"></ul>
+  </main>
+
+  <script>
+    /*
+      新增練習：把練習網頁放在同一個資料夾，再在下面加一筆。
+      file  檔名　title 標題　tags 標籤　minutes 預設分鐘　steps 步驟摘要
+    */
+    const PRACTICES = [
+      {
+        file: 'p04.html',
+        title: '競賽：聽得懂，記得住，傳得出去',
+        tags: ['競賽', '前往他組', '過半通過'],
+        minutes: 3,
+        steps: [
+          '前往他組',
+          '講故事',
+          '過半通過'
+        ]
+      },
+      {
+        file: 'p01.html',
+        title: '聽得懂，記得住，傳得出去',
+        tags: ['兩人一組', '名片猜拳', '轉述評分'],
+        minutes: 3,
+        steps: [
+          '帶一張名片出發',
+          '猜拳，贏者用靶心人公式說故事',
+          '輸者轉述，說故事的人給分 1–10',
+          '超過 8 分，兩人都完成任務'
+        ]
+      },
+      {
+        file: 'p02.html?back=index.html#timer',
+        title: '五大類故事・計時練習',
+        tags: ['靶心人七步驟', '五大類', '計分表'],
+        minutes: 2,
+        steps: [
+          '選一類：起源・苦根・重生・打怪・信念',
+          '照靶心人七步驟說故事',
+          '倒數計時，時間到響鈴',
+          '用計分表打分'
+        ]
+      },
+      {
+        file: 'p03.html',
+        title: '靶心人公式・計時練習',
+        tags: ['靶心人七步驟', '計時'],
+        minutes: 3,
+        steps: [
+          '目標→阻礙→努力→結果',
+          '意外→轉彎→結局',
+          '倒數計時，時間到響鈴'
+        ]
+      }
+    ];
+
+    const grid = document.getElementById('grid');
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    grid.innerHTML = PRACTICES.map((p, i) => `
+      <li class="item">
+        <a class="tile" href="${esc(p.file)}">
+          <div class="top"><span class="no">${i + 1}</span><h3>${esc(p.title)}</h3></div>
+          <div class="tags">${p.minutes ? `<span class="tag time">${p.minutes} 分鐘</span>` : ''}${(p.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+          ${p.steps && p.steps.length ? `<ol>${p.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+          <span class="go">開始練習 →</span>
+        </a>
+      </li>`).join('') + `
+      <li class="item">
+        <div class="tile soon"><span class="no">+</span><h3>更多練習，陸續加入</h3></div>
+      </li>`;
+    /* 用 replace 換頁，分頁的瀏覽紀錄維持一筆，「離開練習」才能關閉分頁 */
+    grid.addEventListener('click', e => { const a = e.target.closest('a.tile'); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return; e.preventDefault(); location.replace(a.href); });
+    document.getElementById('count').textContent = `共 ${PRACTICES.length} 個練習`;
+    /* 離開練習目錄：有上一頁就回上一頁（回到簡報）；沒有就關閉分頁；瀏覽器不允許時，若有設定 EXIT_URL 就前往該網址，否則提示手動關閉 */
+    const EXIT_URL = '';
+    document.getElementById('exit')?.addEventListener('click', () => {
+      if (history.length > 1) { history.back(); return; }
+      try { window.close(); } catch (_) {}
+      setTimeout(() => {
+        if (window.closed) return;
+        if (EXIT_URL) { location.href = EXIT_URL; return; }
+        const t = document.getElementById('toast'); t.hidden = false;
+        clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 4000);
+      }, 300);
+    });
+
+    /* 手機系統字型放大時，把文字縮回原本比例，並讓長標題縮到一行放得下 */
+    (function () {
+      const fix = () => {
+        const p = document.createElement('span'); p.textContent = '靶靶靶靶靶';
+        p.style.cssText = 'position:absolute;left:-9999px;top:0;font:400 100px/1 sans-serif;white-space:nowrap;letter-spacing:0';
+        document.body.appendChild(p); const f = p.getBoundingClientRect().width / 500, k = parseFloat(getComputedStyle(p).fontSize) / 100; p.remove();
+        if (f > 1.04 || f < .96) document.querySelectorAll('body *').forEach(e => {
+          const cs = parseFloat(getComputedStyle(e).fontSize); if (!cs) return;
+          e.dataset.fz0 = e.dataset.fz0 || cs; e.style.setProperty('font-size', (e.dataset.fz0 / k / f).toFixed(2) + 'px', 'important');
+        });
+        document.querySelectorAll('[data-fit]').forEach(h => {
+          h.style.removeProperty('font-size'); let s = parseFloat(getComputedStyle(h).fontSize), n = 0;
+          while (h.scrollWidth > h.clientWidth + 1 && s > 12 && n++ < 60) { s -= 1; h.style.setProperty('font-size', s + 'px', 'important'); }
+        });
+      };
+      const run = () => { try { fix(); } catch (_) {} };
+      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(run);
+      let to; addEventListener('resize', () => { clearTimeout(to); to = setTimeout(run, 200); });
+    })();
+  </script>
+</body>
+</html>

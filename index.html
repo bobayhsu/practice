@@ -18,7 +18,7 @@
     h1 { margin: 0; font-size: clamp(30px, 5vw, 58px); line-height: 1.2; letter-spacing: .03em; }
     .formula { margin: 14px 0 0; font-size: clamp(14px, 2vw, 24px); font-weight: 800; line-height: 1.45; color: var(--coral); }
 
-    .bar { margin: clamp(32px, 5vw, 52px) 0 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .bar { margin: 0 0 18px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .bar h2 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
     .count { font-weight: 800; color: var(--muted); }
 
@@ -56,14 +56,6 @@
 <body>
   <div class="toast" id="toast" role="status" hidden>請直接關閉這個分頁，回到簡報</div>
   <main>
-    <header class="intro">
-      <p class="eyebrow">即刻練習</p>
-      <h1>練習目錄</h1>
-      <p class="formula">靶心人公式：目標→阻礙→努力→結果→意外→轉彎→結局</p>
-    </header>
-
-    
-
     <div class="bar">
       <h2>選一個練習開始</h2>
       <span class="count" id="count"></span>
