@@ -45,9 +45,16 @@
     .contest h2 i { font-style: normal; color: var(--coral); margin: 0 .2em; }
     .contest img { display: block; width: 100%; max-width: 940px; height: auto; margin: clamp(18px, 3vw, 30px) auto 0; }
     @media (max-width: 680px) { .contest { box-shadow: 6px 6px 0 var(--coral); } }
+    .exit { position: fixed; top: 14px; right: 16px; z-index: 10; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 2px solid var(--ink); border-radius: 999px; background: #fff; color: var(--ink); font: 800 15px "Microsoft JhengHei", "Noto Sans TC", sans-serif; cursor: pointer; box-shadow: 3px 3px 0 var(--gold); }
+    .exit:hover, .exit:focus-visible { background: var(--gold); outline: 0; }
+    .toast { position: fixed; left: 50%; bottom: 24px; z-index: 11; transform: translateX(-50%); padding: 12px 20px; background: var(--ink); color: #fff; font-weight: 800; border-radius: 10px; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+    .toast[hidden] { display: none; }
+    @media (max-width: 680px) { main { padding-top: 70px; } }
   </style>
 </head>
 <body>
+  <button class="exit" id="exit" type="button" title="離開練習目錄">離開練習 ✕</button>
+  <div class="toast" id="toast" role="status" hidden>瀏覽器不允許自動關閉，請直接關閉這個分頁</div>
   <main>
     <header class="intro">
       <p class="eyebrow">即刻練習</p>
@@ -114,7 +121,20 @@
       <li class="item">
         <div class="tile soon"><span class="no">+</span><h3>更多練習，陸續加入</h3></div>
       </li>`;
+    /* 用 replace 換頁，分頁的瀏覽紀錄維持一筆，「離開練習」才能關閉分頁 */
+    grid.addEventListener('click', e => { const a = e.target.closest('a.tile'); if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return; e.preventDefault(); location.replace(a.href); });
     document.getElementById('count').textContent = `共 ${PRACTICES.length} 個練習`;
+    /* 離開練習目錄：先關閉分頁；瀏覽器不允許時，若有設定 EXIT_URL 就前往該網址，否則提示手動關閉 */
+    const EXIT_URL = '';
+    document.getElementById('exit').addEventListener('click', () => {
+      try { window.close(); } catch (_) {}
+      setTimeout(() => {
+        if (window.closed) return;
+        if (EXIT_URL) { location.href = EXIT_URL; return; }
+        const t = document.getElementById('toast'); t.hidden = false;
+        clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 4000);
+      }, 300);
+    });
   </script>
 </body>
 </html>
