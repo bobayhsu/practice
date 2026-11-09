@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>即刻練習｜讀書會活動</title>
+  <style>
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    :root { --ink: #12323e; --coral: #e85b4d; --cream: #fffaf0; --gold: #f5bd4f; --mint: #d9eee5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--cream); color: var(--ink); font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
+    main { min-height: 100vh; padding: clamp(24px, 5vw, 72px); display: grid; place-items: center; }
+    .card { width: min(1100px, 100%); position: relative; overflow: hidden; padding: clamp(28px, 5vw, 64px); background: #fff; border: 3px solid var(--ink); box-shadow: 12px 12px 0 var(--gold); }
+    .card::before { content: ""; position: absolute; top: -100px; right: -82px; width: 250px; height: 250px; border-radius: 50%; background: var(--mint); z-index: 0; }
+    .intro, .steps { position: relative; z-index: 1; }
+    .eyebrow { margin: 0 0 12px; font-weight: 800; font-size: clamp(15px, 2vw, 20px); letter-spacing: .18em; color: var(--coral); }
+    h1 { margin: 0; font-size: clamp(21px, 4.4vw, 54px); line-height: 1.2; letter-spacing: .025em; white-space: nowrap; }
+    .formula { margin: 12px 0 0; font-size: clamp(14px, 2.15vw, 26px); font-weight: 800; line-height: 1.35; letter-spacing: .02em; color: var(--coral); white-space: nowrap; }
+
+    /* 計時區 */
+    .timer { position: relative; z-index: 1; margin: clamp(24px, 4vw, 42px) 0; padding: 22px 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 26px; background: var(--ink); color: #fff; transition: background .3s; }
+    #time { display: inline-block; min-width: 0; font-family: ui-monospace, Consolas, monospace; font-size: clamp(56px, 10vw, 120px); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; transition: color .3s; }
+    .controls { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .preset { width: 36px; height: 32px; padding: 0; border: 1px solid rgba(255,255,255,.65); border-radius: 16px; background: transparent; color: #fff; font: 700 13px "Microsoft JhengHei", sans-serif; cursor: pointer; }
+    .preset.selected, .preset:hover, .preset:focus-visible { background: var(--gold); border-color: var(--gold); color: var(--ink); outline: 0; }
+    .icon-button { width: 46px; height: 46px; padding: 0; border: 2px solid rgba(255,255,255,.8); border-radius: 50%; display: grid; place-items: center; background: transparent; color: #fff; font-size: 20px; cursor: pointer; transition: transform .15s, background .15s; }
+    .icon-button.primary { background: var(--coral); border-color: var(--coral); }
+    .icon-button.is-playing { background: #fff; color: var(--ink); }
+    .icon-button:hover, .icon-button:focus-visible { transform: translateY(-2px) scale(1.05); outline: 3px solid var(--gold); outline-offset: 2px; }
+    .icon-button svg { width: 20px; height: 20px; }
+    .play-shape { width: 0; height: 0; margin-left: 4px; border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-left: 14px solid currentColor; }
+    .pause-shape { width: 15px; height: 18px; border-left: 5px solid currentColor; border-right: 5px solid currentColor; }
+    .music-shape { font-size: 23px; line-height: 1; }
+    .reset-shape { font-size: 28px; line-height: .8; }
+    .add-shape { font: 800 15px "Microsoft JhengHei", "Noto Sans TC", sans-serif; letter-spacing: -.02em; }
+
+    /* +30 秒回饋 */
+    .add-flash { animation: addFlash .45s ease-out; }
+    @keyframes addFlash { 0% { color: var(--gold); transform: scale(1.08); } 100% { transform: none; } }
+
+    /* 最後 10 秒：數字變紅並跳動 */
+    .timer.warning #time { color: var(--coral); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(1.06); } }
+
+    /* 時間到：整個計時區閃爍，最後停在紅色 */
+    .timer.done { background: var(--coral); animation: doneFlash .45s ease-in-out 6 alternate; }
+    .timer.done .icon-button.primary { background: var(--ink); border-color: var(--ink); }
+    @keyframes doneFlash { from { background: var(--ink); } to { background: var(--coral); } }
+
+    /* 全螢幕：數字佔滿半個畫面 */
+    :fullscreen main { padding: clamp(16px, 3vw, 40px); }
+    :fullscreen .card { width: min(1500px, 100%); }
+    :fullscreen .timer { flex-direction: column; padding: 28px; }
+    :fullscreen #time { font-size: clamp(120px, 30vh, 380px); }
+    :fullscreen .controls { margin: 0 auto; justify-content: center; }
+
+    /* 步驟 */
+    .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 13px; }
+    .steps li { counter-increment: step; padding: 19px 20px 19px 80px; position: relative; border-left: 8px solid var(--gold); background: #f7f4ed; font-size: clamp(19px, 2.6vw, 29px); line-height: 1.55; font-weight: 700; }
+    .steps li::before { content: counter(step); position: absolute; left: 19px; top: 16px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; font-size: 20px; }
+    .steps .sub { display: block; margin-top: 4px; font-size: .78em; color: #567078; }
+
+    /* 音樂無法播放時的提示 */
+    .music-notice { position: relative; z-index: 1; margin: -24px 0 clamp(24px, 4vw, 42px); padding: 14px 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; background: #fdecea; border-left: 6px solid var(--coral); font-size: 16px; font-weight: 700; line-height: 1.5; }
+    .music-notice[hidden] { display: none; }
+    .pick-music { margin-left: auto; padding: 8px 16px; border: 2px solid var(--ink); background: #fff; color: var(--ink); font: 700 15px "Microsoft JhengHei", "Noto Sans TC", sans-serif; cursor: pointer; }
+    .pick-music:hover, .pick-music:focus-visible { background: var(--gold); outline: 0; }
+
+    @media (max-width: 680px) { .card { box-shadow: 7px 7px 0 var(--gold); } .controls { width: 100%; margin-left: 0; } .presets { justify-content: flex-start; } .steps li { padding-left: 66px; } .steps li::before { left: 13px; } }
+    @media (prefers-reduced-motion: reduce) { .timer.warning #time, .timer.done, .add-flash { animation: none; } }
+    .back{position:fixed;left:16px;top:14px;z-index:5;padding:8px 16px;border:2px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);font:800 15px "Microsoft JhengHei","Noto Sans TC",sans-serif;text-decoration:none;box-shadow:3px 3px 0 var(--gold)}
+    .back:hover,.back:focus-visible{background:var(--gold);outline:0}
+    :fullscreen .back{display:none}
+    @media (max-width:680px){main{padding-top:70px}.formula{white-space:normal}}
+    /* 讀書會：點一個活動就放大標示 */
+    .steps li.act{cursor:pointer;transition:background .18s,font-size .18s}
+    .steps li.act:hover{background:#efe9dd}
+    .steps li.act.selected{background:#fdecea;border-left-color:var(--coral);font-size:clamp(26px,3.6vw,40px)}
+    .steps li.act.selected::before{background:var(--coral)}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card" aria-labelledby="title">
+      <header class="intro">
+        <p class="eyebrow">即刻練習</p>
+        <h1 id="title" data-fit>讀書會活動</h1>
+      </header>
+
+      <section class="timer" id="timerBox" aria-label="倒數計時器">
+        <output id="time" aria-live="off">03:00</output>
+        <div class="controls">
+          <div class="presets" aria-label="選擇倒數分鐘">
+            <button class="preset" type="button" data-minutes="1" title="1 分鐘（按 1）">1</button>
+            <button class="preset" type="button" data-minutes="2" title="2 分鐘（按 2）">2</button>
+            <button class="preset selected" type="button" data-minutes="3" title="3 分鐘（按 3）">3</button>
+            <button class="preset" type="button" data-minutes="5" title="5 分鐘（按 5）">5</button>
+            <button class="preset" type="button" data-minutes="7" title="7 分鐘（按 7）">7</button>
+            <button class="preset" type="button" data-minutes="10" title="10 分鐘（按 0）">10</button>
+          </div>
+          <button class="icon-button primary" id="toggle" type="button"></button>
+          <button class="icon-button" id="addTime" type="button" aria-label="增加 30 秒" title="增加 30 秒（↑ 或上一頁鍵）"><span class="add-shape" aria-hidden="true">+30</span></button>
+          <button class="icon-button" id="reset" type="button" aria-label="重設倒數" title="重設倒數（R）"><span class="reset-shape" aria-hidden="true">↺</span></button>
+          <button class="icon-button" id="music" type="button"><span class="music-shape" aria-hidden="true">♪</span></button>
+          <button class="icon-button" id="fullscreen" type="button"></button>
+        </div>
+      </section>
+
+      <div class="music-notice" id="musicNotice" role="alert" hidden>
+        <span>背景音樂無法播放。可以改從電腦選一首音樂來用。</span>
+        <button class="pick-music" id="pickMusic" type="button">選擇音樂檔</button>
+        <input id="musicFile" type="file" accept="audio/*" hidden>
+      </div>
+
+      <ol class="steps"><li class="act" tabindex="0">目錄搜查線<span class="sub">打開書本目錄，最感興趣兩處</span></li><li class="act" tabindex="0">尋找同路人<span class="sub">分享理由，進一步影響、說服</span></li><li class="act" tabindex="0">三人讀書會<span class="sub">集滿三人，翻看內容，做筆記</span></li><li class="act" tabindex="0">故事傳教士<span class="sub">猜拳，贏者說故事，輸者回饋</span></li><li class="act" tabindex="0">食髓美術館<span class="sub">寫活動或文章心得，貼在牆上</span></li></ol>
+    </section>
+  </main>
+  <audio id="backgroundMusic" preload="auto" loop>
+    <source src="assets/bgm.m4a" type="audio/mp4">
+  </audio>
+  <script>
+    const MUSIC_VOLUME = .28;
+    const display = document.querySelector('#time');
+    const timerBox = document.querySelector('#timerBox');
+    const toggle = document.querySelector('#toggle');
+    const music = document.querySelector('#backgroundMusic');
+    const musicButton = document.querySelector('#music');
+    const fsButton = document.querySelector('#fullscreen');
+    const musicNotice = document.querySelector('#musicNotice');
+    const musicFile = document.querySelector('#musicFile');
+
+    let selectedMinutes = 3;
+    let remaining = selectedMinutes * 60;
+    let timer = null;
+    let fadeTimer = null;
+
+    const playMark = '<span class="play-shape" aria-hidden="true"></span>';
+    const pauseMark = '<span class="pause-shape" aria-hidden="true"></span>';
+
+    /* ---------- 畫面 ---------- */
+    const render = () => {
+      display.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+      timerBox.classList.toggle('warning', remaining > 0 && remaining <= 10);
+    };
+    const setToggle = (running) => {
+      toggle.innerHTML = running ? pauseMark : playMark;
+      const label = running ? '暫停倒數（空白鍵）' : '開始倒數（空白鍵）';
+      toggle.setAttribute('aria-label', label); toggle.title = label;
+    };
+
+    /* ---------- 背景音樂 ---------- */
+    const setMusicButton = (playing) => {
+      musicButton.classList.toggle('is-playing', playing);
+      const label = playing ? '暫停背景音樂（M）' : '播放背景音樂（M）';
+      musicButton.setAttribute('aria-label', label); musicButton.title = label;
+    };
+    const showMusicNotice = () => { musicNotice.hidden = false; };
+    const stopFade = () => { clearInterval(fadeTimer); fadeTimer = null; };
+    const playMusic = async () => {
+      stopFade();
+      try { music.volume = MUSIC_VOLUME; await music.play(); setMusicButton(true); musicNotice.hidden = true; }
+      catch (_) { setMusicButton(false); showMusicNotice(); }
+    };
+    const pauseMusic = () => { stopFade(); music.pause(); music.volume = MUSIC_VOLUME; setMusicButton(false); };
+    const fadeOutMusic = (ms) => new Promise(resolve => {
+      stopFade();
+      if (music.paused) return resolve();
+      const steps = 24, from = music.volume; let i = 0;
+      fadeTimer = setInterval(() => {
+        i++; music.volume = Math.max(0, from * (1 - i / steps));
+        if (i >= steps) { pauseMusic(); resolve(); }
+      }, ms / steps);
+    });
+
+    // 網頁一打開就檢查音樂，上台前就能發現問題
+    music.querySelector('source')?.addEventListener('error', showMusicNotice);
+    music.addEventListener('error', showMusicNotice);
+    setTimeout(() => { if (music.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) showMusicNotice(); }, 1500);
+
+    /* ---------- 結束鈴聲 ---------- */
+    // 在按下開始時就先準備好，避免被瀏覽器的自動播放限制擋掉
+    let audioCtx = null;
+    const prepareAudio = () => {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (_) {}
+    };
+    const strike = (at) => {
+      const partials = [[880, .5], [1760, .22], [2640, .12], [1318.5, .18]];
+      const out = audioCtx.createGain();
+      out.gain.setValueAtTime(.0001, at);
+      out.gain.exponentialRampToValueAtTime(1, at + .01);
+      out.gain.exponentialRampToValueAtTime(.0001, at + 1.4);
+      out.connect(audioCtx.destination);
+      partials.forEach(([freq, vol]) => {
+        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = freq; g.gain.value = vol;
+        o.connect(g).connect(out); o.start(at); o.stop(at + 1.5);
+      });
+    };
+    const chime = () => {
+      try { prepareAudio(); if (!audioCtx) return; const t = audioCtx.currentTime + .05; [0, .7, 1.4].forEach(d => strike(t + d)); } catch (_) {}
+    };
+
+    /* ---------- 倒數 ---------- */
+    const clearDone = () => timerBox.classList.remove('done');
+    const finish = async () => {
+      clearInterval(timer); timer = null; setToggle(false);
+      timerBox.classList.add('done');
+      await fadeOutMusic(1200);   // 音樂先淡出
+      chime();                    // 再響三聲鈴
+    };
+    const start = () => {
+      if (!remaining) reset();
+      prepareAudio(); clearDone(); setToggle(true);
+      if (music.paused) playMusic();   // 開始倒數，音樂一起開始
+      timer = setInterval(() => { remaining--; render(); if (!remaining) finish(); }, 1000);
+    };
+    const pause = () => { clearInterval(timer); timer = null; setToggle(false); pauseMusic(); };
+    const toggleTimer = () => (timer ? pause() : start());
+    function reset() {
+      clearInterval(timer); timer = null; clearDone();
+      pauseMusic(); music.currentTime = 0;
+      remaining = selectedMinutes * 60; setToggle(false); render();
+    }
+    const addThirty = () => {
+      remaining += 30; clearDone(); render();
+      display.classList.remove('add-flash'); void display.offsetWidth; display.classList.add('add-flash');
+    };
+    const choosePreset = (minutes) => {
+      document.querySelectorAll('[data-minutes]').forEach(b => b.classList.toggle('selected', Number(b.dataset.minutes) === minutes));
+      selectedMinutes = minutes; reset();
+    };
+
+    /* ---------- 全螢幕 ---------- */
+    const enterIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+    const exitIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+    const updateFs = () => {
+      const on = !!document.fullscreenElement;
+      fsButton.innerHTML = on ? exitIcon : enterIcon;
+      const label = on ? '離開全螢幕（F）' : '進入全螢幕（F）';
+      fsButton.setAttribute('aria-label', label); fsButton.title = label;
+    };
+    const toggleFullscreen = async () => {
+      try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch (_) {}
+    };
+
+    /* ---------- 按鈕 ---------- */
+    toggle.addEventListener('click', toggleTimer);
+    document.querySelector('#addTime').addEventListener('click', addThirty);
+    document.querySelector('#reset').addEventListener('click', reset);
+    musicButton.addEventListener('click', () => (music.paused ? playMusic() : pauseMusic()));
+    fsButton.addEventListener('click', toggleFullscreen);
+    document.addEventListener('fullscreenchange', updateFs);
+    document.querySelectorAll('[data-minutes]').forEach(b => b.addEventListener('click', () => choosePreset(Number(b.dataset.minutes))));
+    document.querySelector('#pickMusic').addEventListener('click', () => musicFile.click());
+    musicFile.addEventListener('change', () => {
+      const file = musicFile.files[0]; if (!file) return;
+      pauseMusic(); music.src = URL.createObjectURL(file); music.load(); playMusic();
+    });
+
+    /* ---------- 鍵盤與簡報筆 ---------- */
+    // 簡報筆的「下一頁」通常送出 PageDown 或 →，「上一頁」送出 PageUp 或 ←
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      const key = e.key;
+      const act = (fn) => { e.preventDefault(); fn(); };
+      if ([' ', 'PageDown', 'ArrowRight', 'ArrowDown'].includes(key)) return act(toggleTimer);
+      if (['PageUp', 'ArrowLeft', 'ArrowUp'].includes(key)) return act(addThirty);
+      if (key === 'r' || key === 'R') return act(reset);
+      if (key === 'm' || key === 'M') return act(() => (music.paused ? playMusic() : pauseMusic()));
+      if (key === 'f' || key === 'F') return act(toggleFullscreen);
+      const presetKeys = { '1': 1, '2': 2, '3': 3, '5': 5, '7': 7, '0': 10 };
+      if (key in presetKeys) return act(() => choosePreset(presetKeys[key]));
+    });
+
+    setToggle(false); setMusicButton(false); updateFs(); render();
+  
+    /* 手機系統字型放大時，把文字縮回原本比例，並讓長標題縮到一行放得下 */
+    (function () {
+      const fix = () => {
+        const p = document.createElement('span'); p.textContent = '靶靶靶靶靶';
+        p.style.cssText = 'position:absolute;left:-9999px;top:0;font:400 100px/1 sans-serif;white-space:nowrap;letter-spacing:0';
+        document.body.appendChild(p); const f = p.getBoundingClientRect().width / 500, k = parseFloat(getComputedStyle(p).fontSize) / 100; p.remove();
+        if (f > 1.04 || f < .96) document.querySelectorAll('body *').forEach(e => {
+          const cs = parseFloat(getComputedStyle(e).fontSize); if (!cs) return;
+          e.dataset.fz0 = e.dataset.fz0 || cs; e.style.setProperty('font-size', (e.dataset.fz0 / k / f).toFixed(2) + 'px', 'important');
+        });
+        document.querySelectorAll('[data-fit]').forEach(h => {
+          h.style.removeProperty('font-size'); let s = parseFloat(getComputedStyle(h).fontSize), n = 0;
+          while (h.scrollWidth > h.clientWidth + 1 && s > 12 && n++ < 60) { s -= 1; h.style.setProperty('font-size', s + 'px', 'important'); }
+        });
+      };
+      const run = () => { try { fix(); } catch (_) {} };
+      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(run);
+      let to; addEventListener('resize', () => { clearTimeout(to); to = setTimeout(run, 200); });
+    })();
+</script>
+<script>document.querySelectorAll('.steps li.act').forEach(li=>{const pick=()=>{document.querySelectorAll('.steps li.act').forEach(x=>x.classList.toggle('selected',x===li));};li.addEventListener('click',e=>{e.stopPropagation();pick();});li.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();pick();}});});</script>
+</body>
+</html>
